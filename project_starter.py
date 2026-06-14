@@ -4,12 +4,22 @@ import os
 import time
 import dotenv
 import ast
+import atexit
+import json
+import re
+import threading
+import uuid
+from dataclasses import dataclass, field
+from pathlib import Path
 from sqlalchemy.sql import text
 from datetime import datetime, timedelta
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 from sqlalchemy import create_engine, Engine
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
+from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.providers.openai import OpenAIProvider
+import logfire
 
 # Create an SQLite database
 db_engine = create_engine("sqlite:///beaver_choice.db")
@@ -582,16 +592,310 @@ def search_quote_history(search_terms: List[str], limit: int = 5) -> List[Dict]:
         result = conn.execute(text(query), params)
         return [dict(row._mapping) for row in result]
 
-########################
-########################
-########################
+
 # YOUR MULTI AGENT STARTS HERE
-########################
-########################
-########################
-
-
 # Set up and load your env parameters and instantiate your model.
+
+dotenv.load_dotenv()
+
+LOGFIRE_LOG_PATH = Path(os.getenv("LOGFIRE_LOG_FILE", "logfire.log"))
+LOGFIRE_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+LOGFIRE_LOG_STREAM = LOGFIRE_LOG_PATH.open(
+    "a",
+    encoding="utf-8",
+    buffering=1,
+)
+
+logfire.configure(
+    service_name="beavers-choice-multi-agent",
+    send_to_logfire=False,
+    console=logfire.ConsoleOptions(
+        output=LOGFIRE_LOG_STREAM,
+        span_style="show-parents",
+        include_timestamps=True,
+        include_tags=True,
+        verbose=True,
+        show_project_link=False,
+    ),
+)
+logfire.instrument_pydantic_ai()
+logfire.instrument_sqlalchemy(engine=db_engine)
+
+
+def _shutdown_logfire() -> None:
+    """Flush local traces before the Python process exits."""
+    logfire.force_flush()
+    LOGFIRE_LOG_STREAM.flush()
+    LOGFIRE_LOG_STREAM.close()
+
+
+atexit.register(_shutdown_logfire)
+
+OPENAI_API_KEY = os.getenv("UDACITY_OPENAI_API_KEY")
+OPENAI_BASE_URL = os.getenv(
+    "UDACITY_OPENAI_API_BASE_URL",
+    "https://openai.vocareum.com/v1",
+)
+OPENAI_MODEL_NAME = os.getenv("UDACITY_OPENAI_MODEL", "gpt-4o-mini")
+
+if not OPENAI_API_KEY:
+    raise RuntimeError(
+        "UDACITY_OPENAI_API_KEY is required. Add it to .env before running the project."
+    )
+
+agent_model = OpenAIChatModel(
+    OPENAI_MODEL_NAME,
+    provider=OpenAIProvider(
+        base_url=OPENAI_BASE_URL,
+        api_key=OPENAI_API_KEY,
+    ),
+)
+
+CATALOG_BY_NAME = {
+    item["item_name"].casefold(): item
+    for item in paper_supplies
+}
+CATALOG_NAMES = [item["item_name"] for item in paper_supplies]
+
+
+class RequestedItem(BaseModel):
+    """A validated line item using an exact Beaver's Choice catalog name."""
+
+    item_name: str = Field(
+        description="Exact item_name from the Beaver's Choice catalog."
+    )
+    quantity: int = Field(gt=0, description="Number of units requested.")
+    requested_description: str = Field(
+        default="",
+        description="The customer's original wording for this item.",
+    )
+
+
+class InquiryPlan(BaseModel):
+    """Validated routing decision produced by the decision orchestrator."""
+
+    route: Literal["inventory", "quote", "order", "general"] = Field(
+        description=(
+            "inventory for availability questions, quote for pricing requests, "
+            "order when the customer asks to buy or deliver items, otherwise general."
+        )
+    )
+    request_date: str = Field(description="Request date in YYYY-MM-DD format.")
+    required_by: Optional[str] = Field(
+        default=None,
+        description="Requested delivery date in YYYY-MM-DD format, if supplied.",
+    )
+    items: List[RequestedItem] = Field(default_factory=list)
+    unmatched_items: List[str] = Field(
+        default_factory=list,
+        description="Requested products that cannot be mapped to the catalog.",
+    )
+    customer_summary: str = Field(
+        description="A concise summary of the customer's intent and constraints."
+    )
+
+
+@dataclass
+class SpecialistDeps:
+    """Validated inputs and an idempotent result cache for one specialist run."""
+
+    plan: InquiryPlan
+    cached_result: Optional[Dict[str, Any]] = None
+    result_lock: threading.Lock = field(default_factory=threading.Lock)
+
+
+def _parse_date(value: str, field_name: str) -> datetime:
+    try:
+        return datetime.fromisoformat(value.split("T")[0])
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field_name} must use YYYY-MM-DD format: {value!r}") from exc
+
+
+def _validated_catalog_items(items: List[RequestedItem]) -> List[Dict[str, Any]]:
+    combined: Dict[str, Dict[str, Any]] = {}
+
+    for requested_item in items:
+        catalog_item = CATALOG_BY_NAME.get(requested_item.item_name.strip().casefold())
+        if catalog_item is None:
+            raise ValueError(
+                f"Unknown catalog item {requested_item.item_name!r}. "
+                "Use an exact item_name from the catalog."
+            )
+
+        exact_name = catalog_item["item_name"]
+        if exact_name not in combined:
+            combined[exact_name] = {
+                **catalog_item,
+                "quantity": 0,
+                "requested_descriptions": [],
+            }
+
+        combined[exact_name]["quantity"] += requested_item.quantity
+        if requested_item.requested_description:
+            combined[exact_name]["requested_descriptions"].append(
+                requested_item.requested_description
+            )
+
+    return list(combined.values())
+
+
+def _minimum_stock_level(item_name: str) -> int:
+    result = pd.read_sql(
+        """
+        SELECT min_stock_level
+        FROM inventory
+        WHERE item_name = :item_name
+        LIMIT 1
+        """,
+        db_engine,
+        params={"item_name": item_name},
+    )
+    if result.empty:
+        return 100
+    return int(result.iloc[0]["min_stock_level"])
+
+
+def _inventory_snapshot(
+    items: List[RequestedItem],
+    as_of_date: str,
+    required_by: Optional[str] = None,
+) -> Dict[str, Any]:
+    request_date = _parse_date(as_of_date, "as_of_date")
+    deadline = _parse_date(required_by, "required_by") if required_by else None
+    lines = []
+
+    for item in _validated_catalog_items(items):
+        stock_result = get_stock_level(item["item_name"], as_of_date)
+        current_stock = int(stock_result.iloc[0]["current_stock"])
+        minimum_stock = _minimum_stock_level(item["item_name"])
+        restock_quantity = max(
+            0,
+            item["quantity"] + minimum_stock - current_stock,
+        )
+        supplier_delivery = (
+            get_supplier_delivery_date(as_of_date, restock_quantity)
+            if restock_quantity
+            else request_date.strftime("%Y-%m-%d")
+        )
+        deliverable = (
+            deadline is None
+            or _parse_date(supplier_delivery, "supplier_delivery") <= deadline
+        )
+
+        lines.append(
+            {
+                "item_name": item["item_name"],
+                "requested_quantity": item["quantity"],
+                "current_stock": current_stock,
+                "minimum_stock_level": minimum_stock,
+                "available_without_restock": current_stock >= item["quantity"],
+                "restock_quantity": restock_quantity,
+                "supplier_delivery_date": supplier_delivery,
+                "deliverable_by_deadline": deliverable,
+            }
+        )
+
+    return {
+        "as_of_date": request_date.strftime("%Y-%m-%d"),
+        "required_by": deadline.strftime("%Y-%m-%d") if deadline else None,
+        "all_items_deliverable": all(
+            line["deliverable_by_deadline"] for line in lines
+        ),
+        "items": lines,
+    }
+
+
+def _discount_rate(total_quantity: int) -> float:
+    if total_quantity >= 5000:
+        return 0.15
+    if total_quantity >= 2000:
+        return 0.10
+    if total_quantity >= 500:
+        return 0.05
+    return 0.0
+
+
+def _historical_quote_examples(
+    item_names: List[str],
+    limit: int = 5,
+) -> List[Dict[str, Any]]:
+    examples: List[Dict[str, Any]] = []
+    seen = set()
+
+    for item_name in item_names:
+        search_candidates = [item_name]
+        meaningful_words = [
+            word
+            for word in re.findall(r"[A-Za-z]+", item_name)
+            if len(word) >= 4
+        ]
+        if meaningful_words:
+            search_candidates.append(meaningful_words[0])
+
+        for search_term in search_candidates:
+            matches = search_quote_history([search_term], limit=2)
+            for match in matches:
+                key = (
+                    match["original_request"],
+                    match["total_amount"],
+                )
+                if key not in seen:
+                    seen.add(key)
+                    examples.append(match)
+                if len(examples) >= limit:
+                    return examples
+
+    return examples
+
+
+def _calculate_quote(
+    items: List[RequestedItem],
+    request_date: str,
+) -> Dict[str, Any]:
+    _parse_date(request_date, "request_date")
+    catalog_items = _validated_catalog_items(items)
+    total_quantity = sum(item["quantity"] for item in catalog_items)
+    discount_rate = _discount_rate(total_quantity)
+
+    lines = []
+    base_total = 0.0
+    for item in catalog_items:
+        subtotal = round(item["quantity"] * item["unit_price"], 2)
+        discounted_subtotal = round(subtotal * (1 - discount_rate), 2)
+        base_total += subtotal
+        lines.append(
+            {
+                "item_name": item["item_name"],
+                "quantity": item["quantity"],
+                "unit_price": item["unit_price"],
+                "subtotal": subtotal,
+                "discounted_subtotal": discounted_subtotal,
+            }
+        )
+
+    total = round(base_total * (1 - discount_rate), 2)
+    if lines:
+        rounding_difference = round(
+            total - sum(line["discounted_subtotal"] for line in lines),
+            2,
+        )
+        lines[-1]["discounted_subtotal"] = round(
+            lines[-1]["discounted_subtotal"] + rounding_difference,
+            2,
+        )
+
+    return {
+        "request_date": request_date,
+        "total_quantity": total_quantity,
+        "base_total": round(base_total, 2),
+        "discount_rate": discount_rate,
+        "discount_amount": round(base_total - total, 2),
+        "total": total,
+        "lines": lines,
+        "historical_examples": _historical_quote_examples(
+            [item["item_name"] for item in catalog_items]
+        ),
+    }
 
 
 """Set up tools for your agents to use, these should be methods that combine the database functions above
@@ -600,20 +904,459 @@ def search_quote_history(search_terms: List[str], limit: int = 5) -> List[Dict]:
 
 # Tools for inventory agent
 
+def inspect_inventory(
+    items: List[RequestedItem],
+    as_of_date: str,
+    required_by: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Check stock, safety-stock restocking needs, and deadline feasibility."""
+    return _inventory_snapshot(items, as_of_date, required_by)
+
 
 # Tools for quoting agent
+
+def prepare_quote(
+    items: List[RequestedItem],
+    request_date: str,
+) -> Dict[str, Any]:
+    """Create a deterministic itemized quote and retrieve relevant quote history."""
+    return _calculate_quote(items, request_date)
 
 
 # Tools for ordering agent
 
+def fulfill_order(
+    items: List[RequestedItem],
+    order_date: str,
+    required_by: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Validate, restock, and record an order without overspending available cash."""
+    inventory = _inventory_snapshot(items, order_date, required_by)
+    blocked_items = [
+        line["item_name"]
+        for line in inventory["items"]
+        if not line["deliverable_by_deadline"]
+    ]
+    if blocked_items:
+        return {
+            "status": "rejected",
+            "reason": "Supplier lead time exceeds the requested delivery date.",
+            "blocked_items": blocked_items,
+            "inventory": inventory,
+        }
+
+    quote = _calculate_quote(items, order_date)
+    catalog_items = {
+        item["item_name"]: item
+        for item in _validated_catalog_items(items)
+    }
+    restock_cost = round(
+        sum(
+            line["restock_quantity"]
+            * catalog_items[line["item_name"]]["unit_price"]
+            for line in inventory["items"]
+        ),
+        2,
+    )
+    available_cash = get_cash_balance(order_date)
+    if restock_cost > available_cash:
+        return {
+            "status": "rejected",
+            "reason": "Insufficient cash to purchase the required restock.",
+            "required_cash": restock_cost,
+            "available_cash": round(available_cash, 2),
+        }
+
+    order_reference = (
+        f"BC-{order_date.replace('-', '')}-{uuid.uuid4().hex[:8].upper()}"
+    )
+
+    with db_engine.begin() as connection:
+        for item_name, item in catalog_items.items():
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO inventory (
+                        item_name,
+                        category,
+                        unit_price,
+                        current_stock,
+                        min_stock_level
+                    )
+                    SELECT
+                        :item_name,
+                        :category,
+                        :unit_price,
+                        0,
+                        100
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM inventory WHERE item_name = :item_name
+                    )
+                    """
+                ),
+                {
+                    "item_name": item_name,
+                    "category": item["category"],
+                    "unit_price": item["unit_price"],
+                },
+            )
+
+        for inventory_line in inventory["items"]:
+            restock_quantity = inventory_line["restock_quantity"]
+            if restock_quantity:
+                unit_price = catalog_items[inventory_line["item_name"]]["unit_price"]
+                connection.execute(
+                    text(
+                        """
+                        INSERT INTO transactions (
+                            item_name,
+                            transaction_type,
+                            units,
+                            price,
+                            transaction_date
+                        )
+                        VALUES (
+                            :item_name,
+                            'stock_orders',
+                            :units,
+                            :price,
+                            :transaction_date
+                        )
+                        """
+                    ),
+                    {
+                        "item_name": inventory_line["item_name"],
+                        "units": restock_quantity,
+                        "price": round(restock_quantity * unit_price, 2),
+                        "transaction_date": order_date,
+                    },
+                )
+
+        for quote_line in quote["lines"]:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO transactions (
+                        item_name,
+                        transaction_type,
+                        units,
+                        price,
+                        transaction_date
+                    )
+                    VALUES (
+                        :item_name,
+                        'sales',
+                        :units,
+                        :price,
+                        :transaction_date
+                    )
+                    """
+                ),
+                {
+                    "item_name": quote_line["item_name"],
+                    "units": quote_line["quantity"],
+                    "price": quote_line["discounted_subtotal"],
+                    "transaction_date": order_date,
+                },
+            )
+
+    delivery_dates = [
+        line["supplier_delivery_date"]
+        for line in inventory["items"]
+    ]
+    scheduled_delivery = max(delivery_dates) if delivery_dates else order_date
+
+    return {
+        "status": "fulfilled",
+        "order_reference": order_reference,
+        "order_date": order_date,
+        "scheduled_delivery": scheduled_delivery,
+        "required_by": required_by,
+        "charged_total": quote["total"],
+        "discount_rate": quote["discount_rate"],
+        "restock_cost": restock_cost,
+        "items": quote["lines"],
+    }
+
 
 # Set up your agents and create an orchestration agent that will manage them.
 
+catalog_prompt = "\n".join(f"- {name}" for name in CATALOG_NAMES)
+
+decision_orchestrator_agent = Agent(
+    agent_model,
+    output_type=InquiryPlan,
+    instructions="""
+You are Beaver's Choice decision orchestrator and data validation agent.
+Parse the customer inquiry, validate dates and quantities, and select one route.
+
+Routing rules:
+- "order": the customer asks to buy, place an order, confirm delivery, or supply items.
+- "quote": the customer asks only for prices, estimates, or quote discussion.
+- "inventory": the customer asks only about availability or stock.
+- "general": no specialist can validly handle the request.
+
+Map products only to exact catalog names from the list below. Preserve quantities.
+Put products that cannot reasonably map to the catalog in unmatched_items.
+Common wording guidance:
+- printer or copier paper usually maps to "Standard copy paper"
+- glossy paper maps to "Glossy paper"
+- matte paper maps to "Matte paper"
+- cardstock maps to "Cardstock"
+- streamers maps to "Party streamers"
+- washi tape maps to "Decorative adhesive tape (washi tape)"
+- poster boards can map to "Large poster paper (24x36 inches)"
+- balloons and unsupported paper sizes with no catalog equivalent remain unmatched
+
+The prompt includes an explicit Date of request; use it as request_date.
+Convert any delivery deadline to YYYY-MM-DD. Never invent quantities or products.
+""",
+)
+
+
+@decision_orchestrator_agent.instructions
+def add_catalog_to_orchestrator() -> str:
+    """Supply the current catalog to the validation agent at run time."""
+    return f"Use only these exact Beaver's Choice catalog item names:\n{catalog_prompt}"
+
+
+inventory_agent = Agent(
+    agent_model,
+    deps_type=SpecialistDeps,
+    instructions="""
+You are Beaver's Choice inventory specialist.
+You must call inventory_lookup_tool using the validated plan supplied as dependencies.
+Explain current stock, restocking needs, supplier timing, and whether the requested
+deadline is feasible. Treat restocking needed to preserve minimum stock as a real
+restocking recommendation even when enough units are currently available.
+Never guess stock values or rename catalog items.
+""",
+)
+
+
+@inventory_agent.instructions
+def add_inventory_plan(ctx: RunContext[SpecialistDeps]) -> str:
+    """Inject the orchestrator-validated plan into the inventory agent."""
+    return "Validated inquiry plan:\n" + ctx.deps.plan.model_dump_json(indent=2)
+
+
+@inventory_agent.tool
+def inventory_lookup_tool(ctx: RunContext[SpecialistDeps]) -> Dict[str, Any]:
+    """Inspect stock and delivery feasibility for the validated inquiry plan."""
+    with ctx.deps.result_lock:
+        if ctx.deps.cached_result is None:
+            plan = ctx.deps.plan
+            ctx.deps.cached_result = inspect_inventory(
+                plan.items,
+                plan.request_date,
+                plan.required_by,
+            )
+        return ctx.deps.cached_result
+
+
+quote_agent = Agent(
+    agent_model,
+    deps_type=SpecialistDeps,
+    instructions="""
+You are Beaver's Choice quote specialist.
+You must call quote_calculation_tool using the validated plan supplied as dependencies.
+Present an itemized quote, the bulk discount, final total, and briefly mention how
+relevant historical quote examples informed the explanation when examples exist.
+Never change tool-calculated prices or use unsupported items.
+""",
+)
+
+
+@quote_agent.instructions
+def add_quote_plan(ctx: RunContext[SpecialistDeps]) -> str:
+    """Inject the orchestrator-validated plan into the quote agent."""
+    return "Validated inquiry plan:\n" + ctx.deps.plan.model_dump_json(indent=2)
+
+
+@quote_agent.tool
+def quote_calculation_tool(ctx: RunContext[SpecialistDeps]) -> Dict[str, Any]:
+    """Calculate itemized pricing for the validated inquiry plan."""
+    with ctx.deps.result_lock:
+        if ctx.deps.cached_result is None:
+            plan = ctx.deps.plan
+            ctx.deps.cached_result = prepare_quote(
+                plan.items,
+                plan.request_date,
+            )
+        return ctx.deps.cached_result
+
+
+order_agent = Agent(
+    agent_model,
+    deps_type=SpecialistDeps,
+    instructions="""
+You are Beaver's Choice order fulfillment specialist.
+You must call order_fulfillment_tool using the validated plan supplied as dependencies.
+Only claim an order is confirmed when the tool returns status "fulfilled".
+Report the order reference, charged total, delivery schedule, and any rejection
+reason exactly as returned by the tool.
+""",
+)
+
+
+@order_agent.instructions
+def add_order_plan(ctx: RunContext[SpecialistDeps]) -> str:
+    """Inject the orchestrator-validated plan into the order agent."""
+    return "Validated inquiry plan:\n" + ctx.deps.plan.model_dump_json(indent=2)
+
+
+@order_agent.tool
+def order_fulfillment_tool(ctx: RunContext[SpecialistDeps]) -> Dict[str, Any]:
+    """Fulfill the validated order once and return its authoritative result."""
+    with ctx.deps.result_lock:
+        if ctx.deps.cached_result is None:
+            plan = ctx.deps.plan
+            ctx.deps.cached_result = fulfill_order(
+                plan.items,
+                plan.request_date,
+                plan.required_by,
+            )
+        return ctx.deps.cached_result
+
+
+customer_inquiry_agent = Agent(
+    agent_model,
+    instructions="""
+You are the customer-facing Beaver's Choice inquiry agent.
+Create one concise, professional response from the validated plan and specialist
+reports supplied in the prompt. Use only those facts. Clearly identify unsupported
+items, prices, discounts, delivery dates, order status, and next steps. Do not invent
+stock, products, order references, deadlines, or guarantees. A request_date is only
+the date the inquiry was submitted; mention a delivery deadline only when required_by
+is present in the validated plan.
+""",
+)
+
+
+def call_multi_agent_system(customer_request: str) -> str:
+    """Validate, route, execute specialist agents, and synthesize one response."""
+    inquiry_id = uuid.uuid4().hex
+    with logfire.span(
+        "Process customer inquiry",
+        inquiry_id=inquiry_id,
+        customer_request=customer_request,
+    ):
+        try:
+            plan_result = decision_orchestrator_agent.run_sync(customer_request)
+            plan = plan_result.output
+
+            explicit_request_date = re.search(
+                r"Date of request:\s*(\d{4}-\d{2}-\d{2})",
+                customer_request,
+                flags=re.IGNORECASE,
+            )
+            if explicit_request_date:
+                plan.request_date = explicit_request_date.group(1)
+
+            _parse_date(plan.request_date, "request_date")
+            if plan.required_by:
+                _parse_date(plan.required_by, "required_by")
+
+            logfire.info(
+                "Inquiry validated and routed",
+                inquiry_id=inquiry_id,
+                route=plan.route,
+                request_date=plan.request_date,
+                required_by=plan.required_by,
+                item_count=len(plan.items),
+                unmatched_items=plan.unmatched_items,
+            )
+
+            plan_json = plan.model_dump_json(indent=2)
+            specialist_reports: Dict[str, str] = {}
+            specialist_results: Dict[str, Dict[str, Any]] = {}
+
+            if plan.items and plan.route in {"inventory", "quote", "order"}:
+                inventory_deps = SpecialistDeps(plan=plan)
+                inventory_result = inventory_agent.run_sync(
+                    "Review this validated inquiry plan:\n" + plan_json,
+                    deps=inventory_deps,
+                )
+                specialist_reports["inventory"] = inventory_result.output
+                if inventory_deps.cached_result is None:
+                    inventory_deps.cached_result = inspect_inventory(
+                        plan.items,
+                        plan.request_date,
+                        plan.required_by,
+                    )
+                specialist_results["inventory"] = inventory_deps.cached_result
+
+            if plan.items and plan.route in {"quote", "order"}:
+                quote_deps = SpecialistDeps(plan=plan)
+                quote_result = quote_agent.run_sync(
+                    "Prepare pricing for this validated inquiry plan:\n" + plan_json,
+                    deps=quote_deps,
+                )
+                specialist_reports["quote"] = quote_result.output
+                if quote_deps.cached_result is None:
+                    quote_deps.cached_result = prepare_quote(
+                        plan.items,
+                        plan.request_date,
+                    )
+                specialist_results["quote"] = quote_deps.cached_result
+
+            if plan.items and plan.route == "order":
+                order_deps = SpecialistDeps(plan=plan)
+                order_result = order_agent.run_sync(
+                    "Fulfill this validated inquiry plan:\n"
+                    + plan_json
+                    + "\nInventory report:\n"
+                    + specialist_reports.get("inventory", "")
+                    + "\nQuote report:\n"
+                    + specialist_reports.get("quote", ""),
+                    deps=order_deps,
+                )
+                specialist_reports["order"] = order_result.output
+                if order_deps.cached_result is None:
+                    order_deps.cached_result = fulfill_order(
+                        plan.items,
+                        plan.request_date,
+                        plan.required_by,
+                    )
+                specialist_results["order"] = order_deps.cached_result
+
+            customer_result = customer_inquiry_agent.run_sync(
+                "Original customer inquiry:\n"
+                + customer_request
+                + "\n\nValidated plan:\n"
+                + plan_json
+                + "\n\nSpecialist reports:\n"
+                + json.dumps(specialist_reports, indent=2)
+                + "\n\nAuthoritative specialist tool results:\n"
+                + json.dumps(specialist_results, indent=2)
+            )
+            logfire.info(
+                "Inquiry completed",
+                inquiry_id=inquiry_id,
+                route=plan.route,
+                specialist_agents=list(specialist_reports),
+            )
+            return customer_result.output
+        except Exception as exc:
+            logfire.exception(
+                "Inquiry workflow failed",
+                inquiry_id=inquiry_id,
+                error_type=type(exc).__name__,
+            )
+            return (
+                "We could not complete this inquiry because the agent workflow failed: "
+                f"{type(exc).__name__}: {exc}"
+            )
 
 # Run your test scenarios by writing them here. Make sure to keep track of them.
 
 def run_test_scenarios():
-    
+    test_run_id = uuid.uuid4().hex
+    logfire.info(
+        "Starting complete test scenario run",
+        test_run_id=test_run_id,
+    )
+
     print("Initializing Database...")
     init_database()
     try:
@@ -633,36 +1376,34 @@ def run_test_scenarios():
     current_cash = report["cash_balance"]
     current_inventory = report["inventory_value"]
 
-    ############
-    ############
-    ############
     # INITIALIZE YOUR MULTI AGENT SYSTEM HERE
-    ############
-    ############
-    ############
-
     results = []
     for idx, row in quote_requests_sample.iterrows():
         request_date = row["request_date"].strftime("%Y-%m-%d")
+        request_id = idx + 1
 
-        print(f"\n=== Request {idx+1} ===")
+        print(f"\n=== Request {request_id} ===")
         print(f"Context: {row['job']} organizing {row['event']}")
         print(f"Request Date: {request_date}")
         print(f"Cash Balance: ${current_cash:.2f}")
         print(f"Inventory Value: ${current_inventory:.2f}")
 
         # Process request
-        request_with_date = f"{row['request']} (Date of request: {request_date})"
+        request_with_date = (
+            f"Customer role: {row['job']}. Event: {row['event']}. "
+            f"Request: {row['request']} (Date of request: {request_date})"
+        )
 
-        ############
-        ############
-        ############
         # USE YOUR MULTI AGENT SYSTEM TO HANDLE THE REQUEST
-        ############
-        ############
-        ############
-
-        # response = call_your_multi_agent_system(request_with_date)
+        with logfire.span(
+            "Run customer test scenario",
+            test_run_id=test_run_id,
+            request_id=request_id,
+            request_date=request_date,
+            customer_job=row["job"],
+            event=row["event"],
+        ):
+            response = call_multi_agent_system(request_with_date)
 
         # Update state
         report = generate_financial_report(request_date)
@@ -694,6 +1435,16 @@ def run_test_scenarios():
 
     # Save results
     pd.DataFrame(results).to_csv("test_results.csv", index=False)
+    logfire.info(
+        "Completed test scenario run",
+        test_run_id=test_run_id,
+        scenario_count=len(results),
+        final_cash=final_report["cash_balance"],
+        final_inventory=final_report["inventory_value"],
+        results_file="test_results.csv",
+        logfire_file=str(LOGFIRE_LOG_PATH),
+    )
+    logfire.force_flush()
     return results
 
 

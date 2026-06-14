@@ -60,9 +60,13 @@ container afterward:
 
 `docker compose run --rm app`
 
-Generated files such as `beaver_choice.db` and `test_results.csv` are written
-to this project directory through the bind mount. Rebuild after changing
-`requirements.txt`:
+Generated files such as `beaver_choice.db`, `test_results.csv`, and
+`logfire.log` are written to this project directory through the bind mount.
+`logfire.log` contains local Pydantic Logfire traces for agent runs, tool calls,
+and scenario outcomes. It is excluded from Git and is not sent to Logfire
+Cloud. Override its path with `LOGFIRE_LOG_FILE` if needed.
+
+Rebuild after changing `requirements.txt`:
 
 `docker compose build --no-cache`
 
