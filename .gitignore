@@ -2,7 +2,6 @@
 __pycache__/
 *.py[cod]
 *.db
-test_results.csv
 logfire.log
 .pytest_cache/
 .mypy_cache/
