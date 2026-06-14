@@ -1,10 +1,10 @@
-# Munder Difflin Multi-Agent System Project
+# Beaver's Choice Multi-Agent System Project
 
-Welcome to the starter code repository for the **Munder Difflin Paper Company Multi-Agent System Project**! This repository contains the starter code and tools you will need to design, build, and test a multi-agent system that supports core business operations at a fictional paper manufacturing company.
+Welcome to the starter code repository for the **Beaver's Choice Paper Company Multi-Agent System Project**! This repository contains the starter code and tools you will need to design, build, and test a multi-agent system that supports core business operations at a fictional paper manufacturing company.
 
 ## Project Context
 
-You’ve been hired as an AI consultant by Munder Difflin Paper Company, a fictional enterprise looking to modernize their workflows. They need a smart, modular **multi-agent system** to automate:
+You’ve been hired as an AI consultant by Beaver's Choice Paper Company, a fictional enterprise looking to modernize their workflows. They need a smart, modular **multi-agent system** to automate:
 
 - **Inventory checks** and restocking decisions
 - **Quote generation** for incoming sales inquiries
@@ -60,7 +60,7 @@ container afterward:
 
 `docker compose run --rm app`
 
-Generated files such as `munder_difflin.db` and `test_results.csv` are written
+Generated files such as `beaver_choice.db` and `test_results.csv` are written
 to this project directory through the bind mount. Rebuild after changing
 `requirements.txt`:
 
