@@ -101,7 +101,8 @@ Make sure to submit the following files:
 
 1. Your completed `template.py` or `project_starter.py` with all agent logic
 2. A **workflow diagram** describing your agent architecture and data flow
-3. A `README.txt` or `design_notes.txt` explaining how your system works
+3. `design_notes.txt`, containing the architecture explanation, evaluation
+   reflection, and future improvements
 4. Outputs from your test run (like `test_results.csv`)
 
 ---

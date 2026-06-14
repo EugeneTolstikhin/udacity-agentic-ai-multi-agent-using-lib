@@ -8,3 +8,4 @@ logfire.log
 .mypy_cache/
 .venv/
 venv/
+RUBRIC_EVALUATION_REPORT.md

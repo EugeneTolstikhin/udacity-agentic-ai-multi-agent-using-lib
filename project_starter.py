@@ -15,6 +15,7 @@ from sqlalchemy.sql import text
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Literal, Optional, Union
 from sqlalchemy import create_engine, Engine
+from sqlalchemy.engine import Connection
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIChatModel
@@ -257,6 +258,7 @@ def create_transaction(
     quantity: int,
     price: float,
     date: Union[str, datetime],
+    connection: Optional[Connection] = None,
 ) -> int:
     """
     This function records a transaction of type 'stock_orders' or 'sales' with a specified
@@ -284,21 +286,44 @@ def create_transaction(
         if transaction_type not in {"stock_orders", "sales"}:
             raise ValueError("Transaction type must be 'stock_orders' or 'sales'")
 
-        # Prepare transaction record as a single-row DataFrame
-        transaction = pd.DataFrame([{
+        insert_query = text(
+            """
+            INSERT INTO transactions (
+                item_name,
+                transaction_type,
+                units,
+                price,
+                transaction_date
+            )
+            VALUES (
+                :item_name,
+                :transaction_type,
+                :units,
+                :price,
+                :transaction_date
+            )
+            """
+        )
+        params = {
             "item_name": item_name,
             "transaction_type": transaction_type,
             "units": quantity,
             "price": price,
             "transaction_date": date_str,
-        }])
+        }
 
-        # Insert the record into the database
-        transaction.to_sql("transactions", db_engine, if_exists="append", index=False)
+        def insert_with_connection(active_connection: Connection) -> int:
+            active_connection.execute(insert_query, params)
+            transaction_id = active_connection.execute(
+                text("SELECT last_insert_rowid()")
+            ).scalar_one()
+            return int(transaction_id)
 
-        # Fetch and return the ID of the inserted row
-        result = pd.read_sql("SELECT last_insert_rowid() as id", db_engine)
-        return int(result.iloc[0]["id"])
+        if connection is not None:
+            return insert_with_connection(connection)
+
+        with db_engine.begin() as active_connection:
+            return insert_with_connection(active_connection)
 
     except Exception as e:
         print(f"Error creating transaction: {e}")
@@ -762,11 +787,14 @@ def _inventory_snapshot(
 ) -> Dict[str, Any]:
     request_date = _parse_date(as_of_date, "as_of_date")
     deadline = _parse_date(required_by, "required_by") if required_by else None
+    complete_inventory = get_all_inventory(as_of_date)
     lines = []
 
     for item in _validated_catalog_items(items):
         stock_result = get_stock_level(item["item_name"], as_of_date)
-        current_stock = int(stock_result.iloc[0]["current_stock"])
+        exact_stock = int(stock_result.iloc[0]["current_stock"])
+        snapshot_stock = int(complete_inventory.get(item["item_name"], 0))
+        current_stock = exact_stock
         minimum_stock = _minimum_stock_level(item["item_name"])
         restock_quantity = max(
             0,
@@ -787,6 +815,7 @@ def _inventory_snapshot(
                 "item_name": item["item_name"],
                 "requested_quantity": item["quantity"],
                 "current_stock": current_stock,
+                "snapshot_stock": snapshot_stock,
                 "minimum_stock_level": minimum_stock,
                 "available_without_restock": current_stock >= item["quantity"],
                 "restock_quantity": restock_quantity,
@@ -798,6 +827,7 @@ def _inventory_snapshot(
     return {
         "as_of_date": request_date.strftime("%Y-%m-%d"),
         "required_by": deadline.strftime("%Y-%m-%d") if deadline else None,
+        "inventory_items_in_stock": len(complete_inventory),
         "all_items_deliverable": all(
             line["deliverable_by_deadline"] for line in lines
         ),
@@ -970,6 +1000,10 @@ def fulfill_order(
     order_reference = (
         f"BC-{order_date.replace('-', '')}-{uuid.uuid4().hex[:8].upper()}"
     )
+    transaction_ids = {
+        "stock_orders": [],
+        "sales": [],
+    }
 
     with db_engine.begin() as connection:
         for item_name, item in catalog_items.items():
@@ -1005,66 +1039,33 @@ def fulfill_order(
             restock_quantity = inventory_line["restock_quantity"]
             if restock_quantity:
                 unit_price = catalog_items[inventory_line["item_name"]]["unit_price"]
-                connection.execute(
-                    text(
-                        """
-                        INSERT INTO transactions (
-                            item_name,
-                            transaction_type,
-                            units,
-                            price,
-                            transaction_date
-                        )
-                        VALUES (
-                            :item_name,
-                            'stock_orders',
-                            :units,
-                            :price,
-                            :transaction_date
-                        )
-                        """
-                    ),
-                    {
-                        "item_name": inventory_line["item_name"],
-                        "units": restock_quantity,
-                        "price": round(restock_quantity * unit_price, 2),
-                        "transaction_date": order_date,
-                    },
+                transaction_id = create_transaction(
+                    item_name=inventory_line["item_name"],
+                    transaction_type="stock_orders",
+                    quantity=restock_quantity,
+                    price=round(restock_quantity * unit_price, 2),
+                    date=order_date,
+                    connection=connection,
                 )
+                transaction_ids["stock_orders"].append(transaction_id)
 
         for quote_line in quote["lines"]:
-            connection.execute(
-                text(
-                    """
-                    INSERT INTO transactions (
-                        item_name,
-                        transaction_type,
-                        units,
-                        price,
-                        transaction_date
-                    )
-                    VALUES (
-                        :item_name,
-                        'sales',
-                        :units,
-                        :price,
-                        :transaction_date
-                    )
-                    """
-                ),
-                {
-                    "item_name": quote_line["item_name"],
-                    "units": quote_line["quantity"],
-                    "price": quote_line["discounted_subtotal"],
-                    "transaction_date": order_date,
-                },
+            transaction_id = create_transaction(
+                item_name=quote_line["item_name"],
+                transaction_type="sales",
+                quantity=quote_line["quantity"],
+                price=quote_line["discounted_subtotal"],
+                date=order_date,
+                connection=connection,
             )
+            transaction_ids["sales"].append(transaction_id)
 
     delivery_dates = [
         line["supplier_delivery_date"]
         for line in inventory["items"]
     ]
     scheduled_delivery = max(delivery_dates) if delivery_dates else order_date
+    financial_report = generate_financial_report(order_date)
 
     return {
         "status": "fulfilled",
@@ -1075,6 +1076,12 @@ def fulfill_order(
         "charged_total": quote["total"],
         "discount_rate": quote["discount_rate"],
         "restock_cost": restock_cost,
+        "transaction_ids": transaction_ids,
+        "post_order_financial_state": {
+            "cash_balance": round(float(financial_report["cash_balance"]), 2),
+            "inventory_value": round(float(financial_report["inventory_value"]), 2),
+            "total_assets": round(float(financial_report["total_assets"]), 2),
+        },
         "items": quote["lines"],
     }
 
@@ -1194,7 +1201,8 @@ You are Beaver's Choice order fulfillment specialist.
 You must call order_fulfillment_tool using the validated plan supplied as dependencies.
 Only claim an order is confirmed when the tool returns status "fulfilled".
 Report the order reference, charged total, delivery schedule, and any rejection
-reason exactly as returned by the tool.
+reason exactly as returned by the tool. Do not reveal transaction IDs, available
+cash, inventory valuation, total assets, or restocking costs to the customer.
 """,
 )
 
@@ -1228,7 +1236,10 @@ reports supplied in the prompt. Use only those facts. Clearly identify unsupport
 items, prices, discounts, delivery dates, order status, and next steps. Do not invent
 stock, products, order references, deadlines, or guarantees. A request_date is only
 the date the inquiry was submitted; mention a delivery deadline only when required_by
-is present in the validated plan.
+is present in the validated plan. Never reveal internal cash balances, inventory
+valuations, total assets, transaction IDs, restocking costs, or internal errors.
+Do not emit placeholder names or signatures. If unsupported items were excluded,
+describe the result as partially fulfilled rather than fully fulfilled.
 """,
 )
 
@@ -1344,8 +1355,8 @@ def call_multi_agent_system(customer_request: str) -> str:
                 error_type=type(exc).__name__,
             )
             return (
-                "We could not complete this inquiry because the agent workflow failed: "
-                f"{type(exc).__name__}: {exc}"
+                "We could not complete this inquiry at this time. "
+                f"Please contact support and provide reference {inquiry_id}."
             )
 
 # Run your test scenarios by writing them here. Make sure to keep track of them.

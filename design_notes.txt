@@ -1,0 +1,209 @@
+Beaver's Choice Multi-Agent System
+Architecture, Evaluation, and Reflection Report
+
+1. Purpose and Evidence
+
+This report explains the architecture shown in
+"Customer Inquiry Decision-2026-06-14-100949.md", reflects on the implemented
+Pydantic AI system in "project_starter.py", and discusses the evaluation
+recorded in "test_results.csv".
+
+The evaluation used all 20 requests from "quote_requests_sample.csv". Requests
+were processed chronologically against the same SQLite business state so that
+each completed sale or stock purchase affected later requests.
+
+2. Architecture and Design Decisions
+
+The system uses five agents, which is the maximum allowed by the project. Each
+agent has a narrow responsibility:
+
+1. Customer Inquiry Agent
+
+   This agent is the customer-facing boundary. It receives the original
+   inquiry and converts the validated plan and specialist reports into one
+   clear response. Keeping customer communication separate prevents internal
+   values such as transaction IDs, cash balances, restocking costs, and
+   technical errors from being exposed.
+
+2. Decision Orchestrator and Validation Agent
+
+   The orchestrator interprets the request and returns a structured
+   "InquiryPlan". It normalizes dates, quantities, catalog items, and the
+   requested operation before selecting the required worker agents. It does
+   not directly change inventory or financial data. This makes delegation
+   explicit and gives the workflow one place for validation and routing.
+
+3. Inventory Agent
+
+   The inventory agent determines current stock, safety-stock impact,
+   restocking requirements, supplier delivery dates, and whether the requested
+   deadline can be met. Its "inventory_lookup_tool" uses
+   "get_all_inventory", "get_stock_level", and
+   "get_supplier_delivery_date".
+
+4. Quote Agent
+
+   The quote agent calculates itemized prices and quantity-based discounts. It
+   also searches prior quotes for useful comparisons through
+   "search_quote_history". Pricing is kept separate from stock mutation so a
+   quote can be produced without accidentally creating a transaction.
+
+5. Order Fulfillment Agent
+
+   The fulfillment agent is the only specialist responsible for business
+   mutations. After inventory and quote checks, its
+   "order_fulfillment_tool" validates available cash, creates stock-purchase
+   and sale transactions, and generates the post-order financial state. It
+   uses "get_cash_balance", "create_transaction", and
+   "generate_financial_report".
+
+The five-agent design was chosen to separate customer communication,
+coordination, inventory decisions, pricing decisions, and transaction
+processing. This reduces overlapping responsibilities and limits write access
+to the fulfillment path. It also allows the orchestrator to combine workers:
+an order normally needs inventory, quote, and fulfillment processing, while a
+stock question can stop after the inventory report.
+
+The data flow follows this sequence:
+
+1. The Customer Inquiry Agent passes the text request to the orchestrator.
+2. The orchestrator validates the request and chooses the required workers.
+3. Worker agents call their Pydantic AI tools and return structured reports.
+4. The fulfillment tool records transactions only after feasibility checks.
+5. The Customer Inquiry Agent receives the plan and specialist reports and
+   produces the final explainable response.
+
+This architecture matches the submitted workflow diagram. The diagram also
+shows every tool, its purpose, its starter helper functions, and the data
+returned between layers.
+
+3. Evaluation Results
+
+The complete evaluation produced these results:
+
+- Input requests processed: 20
+- Rows written to test_results.csv: 20
+- Workflow-error responses: 0
+- Requests producing a sequential cash-balance change: 12
+- Responses containing completed order references: 8
+- Responses identifying partial or unfulfilled items: 15
+- Final cash balance: $45,166.83
+- Final inventory value: $4,205.90
+
+These results satisfy the required outcome diversity. More than three requests
+changed the cash balance, more than three orders were successfully fulfilled,
+and the system did not approve every request.
+
+Specific examples demonstrate the workflow:
+
+- Request 1 was fulfilled from available stock and clearly listed the ordered
+  items, total amount, and delivery date.
+- Request 2 fulfilled supported products while excluding unsupported balloons.
+  The customer response accurately described the result as partially
+  fulfilled and included an order reference.
+- Request 3 applied a 15 percent bulk discount and excluded an unavailable
+  catalog item, demonstrating cooperation between inventory and quote logic.
+- Request 9 was rejected because supplier lead time exceeded the customer's
+  required date, showing that the system does not create a sale merely because
+  pricing is available.
+- Requests 15 through 18 were rejected when stock and supplier dates could not
+  satisfy the deadline.
+- Request 20 completed a later order using the business state left by previous
+  scenarios, demonstrating stateful evaluation rather than isolated examples.
+
+4. System Strengths
+
+Distinct responsibilities
+
+The workers have different purposes, and only the fulfillment workflow mutates
+business records. This makes the architecture easier to explain and reduces
+the risk of duplicate or premature transactions.
+
+Structured orchestration
+
+Pydantic models validate the orchestrator and tool inputs. Agent instructions
+are registered with "@*_agent.instructions", and worker tools are registered
+with "@*_agent.tool", following Pydantic AI conventions.
+
+Complete starter-helper integration
+
+All seven required helper functions are used inside agent tool workflows. The
+transaction helper can share the fulfillment tool's active database
+connection, allowing stock purchases and sales to remain atomic.
+
+Business-aware decisions
+
+The system considers stock, safety levels, supplier lead times, customer
+deadlines, available cash, pricing, discounts, and quote history. This produces
+both successful and unsuccessful outcomes for business reasons instead of
+approving every inquiry.
+
+Explainable and safe responses
+
+Customer responses generally include ordered or excluded items, totals,
+discounts, dates, and reasons for rejection. The regenerated results contain
+no internal exceptions, transaction IDs, cash balances, inventory valuations,
+restocking costs, or unresolved name placeholders. Technical traces remain in
+the local Logfire file.
+
+5. Limitations Observed
+
+The system still depends on the language model to map informal product wording
+to exact catalog names. Ambiguous wording can therefore produce inconsistent
+mapping or unsupported-item decisions.
+
+Some generated responses combine rejection language with the phrase
+"partially fulfilled" even when no transaction occurred. The underlying order
+decision is safe, but the final wording should be derived more
+deterministically from the recorded transaction result.
+
+The implementation is concentrated in one large Python file. It is readable,
+but database access, models, tools, agents, and evaluation would be easier to
+test and maintain as separate modules.
+
+LLM-generated wording and routing can vary between runs. The structured models
+reduce this risk but do not remove it completely.
+
+6. Future Improvements
+
+1. Add deterministic item matching with confidence thresholds.
+
+   Normalize product names and combine exact aliases with fuzzy matching.
+   Automatically accept only high-confidence matches and ask the customer to
+   clarify low-confidence products. This would reduce incorrect mappings while
+   retaining support for natural customer language.
+
+2. Add negotiation and explicit partial-order confirmation.
+
+   Before recording a mixed order, present the supported quantity, unavailable
+   items, revised total, and delivery date, then require customer confirmation.
+   This prevents the system from automatically completing only part of a
+   request when the customer may prefer to cancel or change quantities.
+
+3. Add automated transaction and deadline regression tests.
+
+   Tests should verify idempotency, duplicate-transaction prevention, rollback
+   behavior, safety-stock calculations, supplier lead times, and deadline
+   boundaries. Customer-response tests should also assert that a rejected order
+   is never described as fulfilled.
+
+4. Split the implementation into focused modules.
+
+   Move database helpers, Pydantic models, tools, agents, and evaluation logic
+   into separate modules. This would reduce coupling and make worker-level unit
+   tests simpler.
+
+5. Add an optional business advisor capability.
+
+   A future advisor could analyze aggregate transactions and recommend
+   reorder-point or pricing changes. It should operate outside the customer
+   transaction path so its recommendations cannot directly mutate business
+   data.
+
+7. Conclusion
+
+The five-agent architecture provides clear orchestration, specialist
+responsibilities, and controlled transaction processing. The full evaluation
+shows successful sales, cash changes, partial outcomes, and justified
+rejections. The strongest next steps are deterministic catalog matching,
+customer confirmation for partial orders, and automated regression coverage.

@@ -1,6 +1,3 @@
-# Beaver's Choice Multi-Agent Workflow
-
-```mermaid
 flowchart TD
     CUSTOMER([Customer request])
 
@@ -77,20 +74,3 @@ flowchart TD
     class IT,QT,OT tool;
     class H1,H2,H3,H4,H5,H6,H7 helper;
     class CUSTOMER external;
-```
-
-## Responsibility And Tool Map
-
-| Agent | Responsibility | Pydantic AI tool | Starter helper functions |
-|---|---|---|---|
-| Customer Inquiry Agent | Receives customer context and returns one explainable response | No direct business tool | Receives validated specialist results |
-| Decision Orchestrator and Validation Agent | Parses and validates the request, selects specialists, and combines their reports | Structured `InquiryPlan` output | Delegates rather than mutating business data |
-| Inventory Agent | Checks availability, safety stock, restocking needs, and deadline feasibility | `inventory_lookup_tool` | `get_all_inventory`, `get_stock_level`, `get_supplier_delivery_date` |
-| Quote Agent | Produces itemized pricing, applies bulk discounts, and consults prior quotes | `quote_calculation_tool` | `search_quote_history` |
-| Order Fulfillment Agent | Checks cash, records stock and sales transactions, and reports the resulting business state | `order_fulfillment_tool` | `get_cash_balance`, `create_transaction`, `generate_financial_report` |
-
-The orchestrator can call more than one specialist for an order. An order
-normally passes through inventory checking and quote generation before the
-fulfillment agent records any transaction. Specialist tools return structured
-data to their owning agents; only the Customer Inquiry Agent converts the
-combined result into customer-facing text.
