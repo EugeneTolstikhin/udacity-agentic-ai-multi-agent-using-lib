@@ -1359,6 +1359,53 @@ def call_multi_agent_system(customer_request: str) -> str:
                 f"Please contact support and provide reference {inquiry_id}."
             )
 
+
+def print_results_validation_summary(results_df: pd.DataFrame) -> None:
+    """Print a concise user-friendly summary of the saved evaluation CSV."""
+    print(f"\nSaved {len(results_df)} rows to test_results.csv")
+
+    if results_df.empty:
+        print("No evaluation rows were generated.")
+        return
+
+    cash_values = results_df["cash_balance"].astype(float).reset_index(drop=True)
+    previous_cash_values = pd.Series(
+        [50000.0, *cash_values.iloc[:-1].tolist()]
+    )
+    cash_change_count = int((cash_values != previous_cash_values).sum())
+    completed_order_references = int(
+        results_df["response"]
+        .str.contains("Order Reference", case=False, na=False)
+        .sum()
+    )
+    partial_or_unfulfilled = int(
+        results_df["response"]
+        .str.contains(
+            r"not fulfilled|unable to fulfill|cannot fulfill|rejected|"
+            r"partially fulfilled|excluded",
+            case=False,
+            na=False,
+            regex=True,
+        )
+        .sum()
+    )
+
+    print("Evaluation validation summary:")
+    print(f"- Cash-balance changes: {cash_change_count}")
+    print(f"- Completed order references: {completed_order_references}")
+    print(f"- Partial or unfulfilled responses: {partial_or_unfulfilled}")
+
+    preview = results_df[["request_id", "cash_balance", "response"]].copy()
+    preview["response"] = (
+        preview["response"]
+        .astype(str)
+        .str.replace(r"\s+", " ", regex=True)
+        .str.slice(0, 160)
+    )
+    print("\nFirst five result rows:")
+    print(preview.head().to_string(index=False))
+
+
 # Run your test scenarios by writing them here. Make sure to keep track of them.
 
 def run_test_scenarios():
@@ -1445,7 +1492,9 @@ def run_test_scenarios():
     print(f"Final Inventory: ${final_report['inventory_value']:.2f}")
 
     # Save results
-    pd.DataFrame(results).to_csv("test_results.csv", index=False)
+    results_df = pd.DataFrame(results)
+    results_df.to_csv("test_results.csv", index=False)
+    print_results_validation_summary(results_df)
     logfire.info(
         "Completed test scenario run",
         test_run_id=test_run_id,

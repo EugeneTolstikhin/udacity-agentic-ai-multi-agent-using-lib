@@ -81,6 +81,8 @@ Output will include:
 - Agent responses
 - Cash and inventory updates
 - Final financial report
+- A validation summary with row count, cash-balance changes, completed order
+  references, and the first five CSV rows
 - A `test_results.csv` file with all interaction logs
 
 ---

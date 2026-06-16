@@ -90,6 +90,12 @@ The complete evaluation produced these results:
 - Final cash balance: $45,166.83
 - Final inventory value: $4,205.90
 
+After writing "test_results.csv", the evaluation script also prints a compact
+validation summary with the saved row count, cash-balance change count,
+completed order reference count, partial or unfulfilled response count, and
+the first five rows of "request_id", "cash_balance", and "response". This makes
+the row-level CSV output easier to cross-check from the run log.
+
 These results satisfy the required outcome diversity. More than three requests
 changed the cash balance, more than three orders were successfully fulfilled,
 and the system did not approve every request.
