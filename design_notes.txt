@@ -3,213 +3,181 @@ Architecture, Evaluation, and Reflection Report
 
 1. Purpose and Evidence
 
-This report explains the architecture shown in
+This report explains the strict hexagonal architecture shown in
 "Customer Inquiry Decision-2026-06-14-100949.md", reflects on the implemented
-Pydantic AI system in "project_starter.py", and discusses the evaluation
-recorded in "test_results.csv".
+Pydantic AI system, and discusses the evaluation recorded in
+"test_results.csv".
 
-The evaluation used all 20 requests from "quote_requests_sample.csv". Requests
-were processed chronologically against the same SQLite business state so that
-each completed sale or stock purchase affected later requests.
+The system still uses the required five-agent workflow and the full
+"quote_requests_sample.csv" evaluation. The implementation is now organized so
+the domain core is independent from Pydantic AI, SQLAlchemy, SQLite, Pandas,
+Logfire, environment variables, and filesystem paths.
 
 2. Architecture and Design Decisions
 
-The system uses five agents, which is the maximum allowed by the project. Each
-agent has a narrow responsibility:
+The project is split into four main layers:
+
+1. Domain core
+
+   The domain layer contains catalog matching, inventory, quote, fulfillment,
+   discount, supplier delivery, and response-safety rules. It depends only on
+   domain models and port protocols. This is where deterministic business
+   behavior lives and where most offline tests run.
+
+2. Ports
+
+   Ports are `typing.Protocol` interfaces for AI planning/responding,
+   repositories, telemetry, output, clock, and ID generation. They define what
+   the app needs without binding the app to Pydantic AI, SQLite, Logfire, CSV,
+   UUID, or system time implementations.
+
+3. Adapters
+
+   Adapters implement the ports. The current production adapters are:
+
+   - `PydanticAiAgentAdapter`
+   - `SqlAlchemyPersistenceAdapter`
+   - `LogfireTelemetryAdapter`
+   - `CsvEvaluationOutputAdapter`
+   - `UuidGeneratorAdapter`
+   - `SystemClockAdapter`
+
+   This means LangChain could replace Pydantic AI behind the AI ports, and
+   PostgreSQL or another store could replace SQLite behind the repository
+   ports.
+
+4. Application layer
+
+   `WorkflowOrchestrator` coordinates the ports and domain services. It
+   contains workflow sequencing, not business rules. `EvaluationRunner`
+   handles the 20-scenario run, CSV output, and reviewer-friendly validation
+   summary. `AppContainer` wires the production adapters.
+
+The five agents remain:
 
 1. Customer Inquiry Agent
-
-   This agent is the customer-facing boundary. It receives the original
-   inquiry and converts the validated plan and specialist reports into one
-   clear response. Keeping customer communication separate prevents internal
-   values such as transaction IDs, cash balances, restocking costs, and
-   technical errors from being exposed.
-
-2. Decision Orchestrator and Validation Agent
-
-   The orchestrator interprets the request and returns a structured
-   "InquiryPlan". It normalizes dates, quantities, catalog items, and the
-   requested operation before selecting the required worker agents. It does
-   not directly change inventory or financial data. This makes delegation
-   explicit and gives the workflow one place for validation and routing.
-
+2. Decision Orchestrator Agent
 3. Inventory Agent
-
-   The inventory agent determines current stock, safety-stock impact,
-   restocking requirements, supplier delivery dates, and whether the requested
-   deadline can be met. Its "inventory_lookup_tool" uses
-   "get_all_inventory", "get_stock_level", and
-   "get_supplier_delivery_date".
-
 4. Quote Agent
-
-   The quote agent calculates itemized prices and quantity-based discounts. It
-   also searches prior quotes for useful comparisons through
-   "search_quote_history". Pricing is kept separate from stock mutation so a
-   quote can be produced without accidentally creating a transaction.
-
 5. Order Fulfillment Agent
 
-   The fulfillment agent is the only specialist responsible for business
-   mutations. After inventory and quote checks, its
-   "order_fulfillment_tool" validates available cash, creates stock-purchase
-   and sale transactions, and generates the post-order financial state. It
-   uses "get_cash_balance", "create_transaction", and
-   "generate_financial_report".
+The Decision Orchestrator Agent now extracts raw item phrases, dates,
+quantities, and route. It does not decide final catalog names. The
+domain-level `CatalogMatchingService` normalizes raw phrases using exact
+matches, aliases, and fuzzy matching above a confidence threshold. Unsupported
+or low-confidence products remain in `unmatched_items`.
 
-The five-agent design was chosen to separate customer communication,
-coordination, inventory decisions, pricing decisions, and transaction
-processing. This reduces overlapping responsibilities and limits write access
-to the fulfillment path. It also allows the orchestrator to combine workers:
-an order normally needs inventory, quote, and fulfillment processing, while a
-stock question can stop after the inventory report.
+The worker tools expose authoritative domain-service results:
 
-The data flow follows this sequence:
+- `inventory_lookup_tool` exposes `InventoryService` output.
+- `quote_calculation_tool` exposes `QuoteService` output.
+- `order_fulfillment_tool` exposes `OrderFulfillmentService` output.
 
-1. The Customer Inquiry Agent passes the text request to the orchestrator.
-2. The orchestrator validates the request and chooses the required workers.
-3. Worker agents call their Pydantic AI tools and return structured reports.
-4. The fulfillment tool records transactions only after feasibility checks.
-5. The Customer Inquiry Agent receives the plan and specialist reports and
-   produces the final explainable response.
-
-This architecture matches the submitted workflow diagram. The diagram also
-shows every tool, its purpose, its starter helper functions, and the data
-returned between layers.
+This keeps agent text generation separate from business decisions and database
+mutation.
 
 3. Evaluation Results
 
-The complete evaluation produced these results:
+The latest full evaluation produced these reviewer-visible metrics:
 
 - Input requests processed: 20
 - Rows written to test_results.csv: 20
 - Workflow-error responses: 0
-- Requests producing a sequential cash-balance change: 12
-- Responses containing completed order references: 8
-- Responses identifying partial or unfulfilled items: 15
-- Final cash balance: $45,166.83
-- Final inventory value: $4,205.90
+- Requests producing a sequential cash-balance change: 11
+- Responses containing completed order references: 12
+- Responses identifying partial or unfulfilled items: 11
+- Final cash balance: $45,191.90
+- Final inventory value: $4,212.40
 
-After writing "test_results.csv", the evaluation script also prints a compact
-validation summary with the saved row count, cash-balance change count,
-completed order reference count, partial or unfulfilled response count, and
-the first five rows of "request_id", "cash_balance", and "response". This makes
-the row-level CSV output easier to cross-check from the run log.
+After writing "test_results.csv", the evaluation script prints a compact
+validation summary with row count, cash-balance changes, completed order
+references, partial/unfulfilled response count, and the first five rows of
+"request_id", "cash_balance", and "response". This makes the run log easier to
+cross-check against the submitted CSV.
 
-These results satisfy the required outcome diversity. More than three requests
-changed the cash balance, more than three orders were successfully fulfilled,
-and the system did not approve every request.
-
-Specific examples demonstrate the workflow:
-
-- Request 1 was fulfilled from available stock and clearly listed the ordered
-  items, total amount, and delivery date.
-- Request 2 fulfilled supported products while excluding unsupported balloons.
-  The customer response accurately described the result as partially
-  fulfilled and included an order reference.
-- Request 3 applied a 15 percent bulk discount and excluded an unavailable
-  catalog item, demonstrating cooperation between inventory and quote logic.
-- Request 9 was rejected because supplier lead time exceeded the customer's
-  required date, showing that the system does not create a sale merely because
-  pricing is available.
-- Requests 15 through 18 were rejected when stock and supplier dates could not
-  satisfy the deadline.
-- Request 20 completed a later order using the business state left by previous
-  scenarios, demonstrating stateful evaluation rather than isolated examples.
+The refactor also adds offline regression tests. These tests verify catalog
+matching, discount and delivery policies, response safety, transaction
+commit/rollback behavior, rejected-order non-mutation, CSV output, and a full
+workflow using fake AI ports. No pytest test calls the live LLM.
 
 4. System Strengths
 
-Distinct responsibilities
+Replaceability
 
-The workers have different purposes, and only the fulfillment workflow mutates
-business records. This makes the architecture easier to explain and reduces
-the risk of duplicate or premature transactions.
+The business core no longer imports Pydantic AI, SQLAlchemy, Pandas, Logfire,
+or environment configuration. AI, persistence, telemetry, output, clock, and
+ID generation are explicit adapters behind ports.
 
-Structured orchestration
+Deterministic catalog matching
 
-Pydantic models validate the orchestrator and tool inputs. Agent instructions
-are registered with "@*_agent.instructions", and worker tools are registered
-with "@*_agent.tool", following Pydantic AI conventions.
+Informal customer wording such as "printer paper", "washi tape", "streamers",
+and "poster boards" is normalized before worker agents run. Unsupported items
+such as balloons, A3 paper, and tickets are consistently excluded.
 
-Complete starter-helper integration
+Safer transaction handling
 
-All seven required helper functions are used inside agent tool workflows. The
-transaction helper can share the fulfillment tool's active database
-connection, allowing stock purchases and sales to remain atomic.
+`OrderFulfillmentService` performs order feasibility checks before writes and
+uses an atomic transaction port for restocks and sales. Regression tests verify
+rollback and rejected-order non-mutation.
 
-Business-aware decisions
+Explainable outputs
 
-The system considers stock, safety levels, supplier lead times, customer
-deadlines, available cash, pricing, discounts, and quote history. This produces
-both successful and unsuccessful outcomes for business reasons instead of
-approving every inquiry.
+Customer responses are generated from validated plans and authoritative domain
+results. `ResponseSafetyService` blocks internal terms such as transaction IDs,
+cash balances, inventory valuations, total assets, restocking costs, and
+technical errors.
 
-Explainable and safe responses
+Reviewer compatibility
 
-Customer responses generally include ordered or excluded items, totals,
-discounts, dates, and reasons for rejection. The regenerated results contain
-no internal exceptions, transaction IDs, cash balances, inventory valuations,
-restocking costs, or unresolved name placeholders. Technical traces remain in
-the local Logfire file.
+`project_starter.py` remains the Docker target and still exposes the original
+helper names required by the rubric, but those helpers now delegate to the
+hexagonal package.
 
-5. Limitations Observed
+5. Remaining Limitations
 
-The system still depends on the language model to map informal product wording
-to exact catalog names. Ambiguous wording can therefore produce inconsistent
-mapping or unsupported-item decisions.
+The planner still uses an LLM to extract raw product phrases, route, dates,
+and quantities. Deterministic catalog matching reduces risk, but malformed LLM
+extraction can still affect the workflow.
 
-Some generated responses combine rejection language with the phrase
-"partially fulfilled" even when no transaction occurred. The underlying order
-decision is safe, but the final wording should be derived more
-deterministically from the recorded transaction result.
+The current persistence adapter is SQLAlchemy-based. Switching from SQLite to
+PostgreSQL should be straightforward through the database URL, but switching
+to a NoSQL database would require a new repository adapter.
 
-The implementation is concentrated in one large Python file. It is readable,
-but database access, models, tools, agents, and evaluation would be easier to
-test and maintain as separate modules.
-
-LLM-generated wording and routing can vary between runs. The structured models
-reduce this risk but do not remove it completely.
+The customer-facing response is still LLM-generated. The safety layer catches
+high-risk output, but more deterministic response templates could further
+reduce wording variability.
 
 6. Future Improvements
 
-1. Add deterministic item matching with confidence thresholds.
+1. Add structured extraction tests for the live planner.
 
-   Normalize product names and combine exact aliases with fuzzy matching.
-   Automatically accept only high-confidence matches and ask the customer to
-   clarify low-confidence products. This would reduce incorrect mappings while
-   retaining support for natural customer language.
+   Keep normal pytest offline, but add opt-in live tests guarded by an
+   environment variable to evaluate planner extraction quality against known
+   sample requests.
 
-2. Add negotiation and explicit partial-order confirmation.
+2. Add customer confirmation for partial orders.
 
-   Before recording a mixed order, present the supported quantity, unavailable
-   items, revised total, and delivery date, then require customer confirmation.
-   This prevents the system from automatically completing only part of a
-   request when the customer may prefer to cancel or change quantities.
+   Before fulfilling mixed supported/unsupported orders, ask the customer to
+   confirm the supported subset, revised total, and delivery date.
 
-3. Add automated transaction and deadline regression tests.
+3. Add deterministic response templates for high-risk outcomes.
 
-   Tests should verify idempotency, duplicate-transaction prevention, rollback
-   behavior, safety-stock calculations, supplier lead times, and deadline
-   boundaries. Customer-response tests should also assert that a rejected order
-   is never described as fulfilled.
+   Use templates for rejections and partial orders so those responses cannot
+   accidentally sound fully fulfilled.
 
-4. Split the implementation into focused modules.
+4. Add a PostgreSQL integration profile.
 
-   Move database helpers, Pydantic models, tools, agents, and evaluation logic
-   into separate modules. This would reduce coupling and make worker-level unit
-   tests simpler.
+   Run the same repository contract tests against PostgreSQL to prove the
+   persistence port is genuinely replaceable.
 
-5. Add an optional business advisor capability.
+5. Add a business advisor adapter.
 
-   A future advisor could analyze aggregate transactions and recommend
-   reorder-point or pricing changes. It should operate outside the customer
-   transaction path so its recommendations cannot directly mutate business
-   data.
+   Analyze aggregate transactions and recommend reorder-point or pricing
+   changes without directly mutating customer transactions.
 
 7. Conclusion
 
-The five-agent architecture provides clear orchestration, specialist
-responsibilities, and controlled transaction processing. The full evaluation
-shows successful sales, cash changes, partial outcomes, and justified
-rejections. The strongest next steps are deterministic catalog matching,
-customer confirmation for partial orders, and automated regression coverage.
+The project now keeps the five-agent Pydantic AI workflow while moving business
+rules into a strict hexagonal core. This makes the system easier to test,
+easier to explain, and prepared for future replacement of the AI framework,
+database, telemetry, or output mechanisms.

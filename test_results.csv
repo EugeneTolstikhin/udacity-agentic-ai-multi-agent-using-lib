@@ -1,431 +1,361 @@
 request_id,request_date,cash_balance,inventory_value,response
-1,2025-04-01,45124.7,4875.3,"Thank you for your inquiry regarding the paper supplies for your ceremony. Your order has been successfully fulfilled with the following details:
+1,2025-04-01,45124.7,4875.3,"Your order of paper supplies for the ceremony has been successfully fulfilled. Below are the details:
 
-- **Items Ordered:**
-  - 200 sheets of A4 glossy paper
-  - 100 sheets of heavy cardstock (white)
-  - 100 sheets of colored paper (assorted colors)
-
-- **Total Amount Due:** $65.00
-
-- **Scheduled Delivery:** April 1, 2025
-
-- **Required By:** April 15, 2025
-
-As all items are available in sufficient quantities from our current stock, no restocking was necessary, and your order meets the delivery deadline. If you need further assistance or have any questions, please feel free to reach out."
-2,2025-04-03,45166.45,4830.3,"Thank you for your inquiry regarding the supplies for your parade event.
-
-We have successfully processed your order consisting of:
-- **Colored paper:** 500 sheets
-- **Party streamers:** 300 rolls
-
-The order for balloons was not fulfilled as they are currently unsupported in our inventory. 
-
-### Order Summary:
-- **Order Reference:** BC-20250403-5B7AFDFF
-- **Total Charged:** $61.75
-- **Scheduled Delivery Date:** April 7, 2025
-- **Required By:** April 15, 2025
-
-Your order is partially fulfilled due to the exclusion of balloons. If you would like to place a separate order for balloons or have any further questions, please let me know."
-3,2025-04-04,45091.3,4827.45,"Thank you for your inquiry regarding the order of paper supplies for your upcoming conference. 
-
-Your order has been partially fulfilled as follows:
-
-- **A4 Paper**: 10,000 sheets
-  - **Unit Price**: $0.05
-  - **Subtotal**: $500.00
-  - **Discounted Total**: $425.00 (after a 15% discount)
-  
-- **Standard Copy Paper**: 500 reams
-  - **Unit Price**: $0.04
-  - **Subtotal**: $20.00
-  - **Discounted Total**: $17.00 (after a 15% discount)
-
-### Pricing Summary:
-- **Total before Discount**: $520.00
-- **Total Discount**: $78.00
-- **Final Total**: $442.00
-
-### Important Details:
-- **Scheduled Delivery**: April 11, 2025
-- **Required By**: April 15, 2025
-
-Please note that the order for **A3 paper** has been excluded from this fulfillment request as it was not available.
-
-Your order will be delivered on the scheduled date, and if you need any further assistance or adjustments, please let me know!"
-4,2025-04-05,45053.18,4857.45,"Your order has been partially fulfilled as follows:
-
-- **250 gsm cardstock**
-  - Quantity: **500 sheets**
-  - Price: $0.30 per sheet
-  - Total: **$150.00**
-  - **Discounted Total:** **$142.50** (5% bulk discount applied)
-
-- **A4 paper**
-  - Quantity: **250 sheets**
-  - Price: $0.05 per sheet
-  - Total: **$12.50**
-  - **Discounted Total:** **$11.88** (5% bulk discount applied)
-
-### Final Summary:
-- **Subtotal Before Discount:** $162.50
-- **Final Total After Discount:** **$154.38**
-- **Order Reference:** BC-20250405-1CA2A100
-- **Scheduled Delivery:** **April 9, 2025**
-- **Required By:** **April 15, 2025**
-
-Please note that while the cardstock has been successfully ordered, the A4 paper will be delivered with the required quantity. Thank you for your order, and if you have further questions, please let us know!"
-5,2025-04-05,45075.92999999999,4827.95,"Thank you for your inquiry regarding your party supplies order. Here are the details:
+- **Order Reference:** BC-20250401-59AC318E
+- **Order Date:** April 1, 2025
+- **Scheduled Delivery Date:** April 1, 2025
+- **Total Charged:** $65.00
 
 ### Items Ordered:
-1. **Colored Paper (8.5""x11"")**: 
-   - **Requested**: 500 sheets
-   - **Available**: 188 sheets (requiring restock of 455 sheets, arriving on April 9, 2025)
-   - **Subtotal after Bulk Discount**: $47.50
-   
-2. **Cardstock (various colors)**:
-   - **Requested**: 300 sheets
-   - **Available**: 495 sheets (no restock needed)
-   - **Subtotal after Bulk Discount**: $42.75
-   
-3. **Decorative Adhesive Tape (Washi Tape)**:
-   - **Requested**: 200 rolls
-   - **Available**: 0 rolls (requiring restock of 300 rolls, arriving on April 9, 2025)
-   - **Subtotal after Bulk Discount**: $38.00
+1. **Glossy Paper**
+   - Quantity: 200 sheets
+   - Subtotal: $40.00
 
-### Order Summary:
-- **Total Before Discount**: $135.00
-- **Bulk Discount (5%)**: $6.75
-- **Final Total**: $128.25
-- **Order Reference**: BC-20250405-4150B6F9
+2. **Cardstock**
+   - Quantity: 100 sheets
+   - Subtotal: $15.00
+
+3. **Colored Paper**
+   - Quantity: 100 sheets
+   - Subtotal: $10.00
+
+All items are in stock and will be delivered as scheduled, well before your required date of April 15, 2025. If you have any further questions or need assistance, please feel free to ask!"
+2,2025-04-03,45087.7,4905.3,"Thank you for your inquiry regarding the supplies for the parade.
+
+Your order has been partially fulfilled, as we were able to process the following items:
+
+1. **500 sheets of colorful poster paper**: Total cost $125.00 (discounted to $118.75 after a 5% bulk discount).
+2. **300 rolls of party streamers**: Total cost $15.00 (discounted to $14.25 after a 5% bulk discount).
+
+The total charged for your order is **$133.00**.
+
+Unfortunately, we were unable to fulfill the request for **200 balloons**, as they are currently unsupported.
+
+**Scheduled Delivery**: Both items will be delivered by **April 7, 2025**, which meets your requirement of April 15, 2025.
+
+If you need any further assistance or wish to discuss alternative options for the balloons, please feel free to reach out. Thank you for choosing us for your event supplies!"
+3,2025-04-04,45012.55,4902.45,"Your order has been successfully processed. Here are the details:
+
+1. **Order Reference**: BC-20250404-9F5D1844
+2. **Order Date**: April 4, 2025
+3. **Items Ordered**:
+   - **A4 Paper**: 10,000 sheets
+     - **Subtotal**: $500.00
+     - **Discounted Total**: $425.00 (after 15% discount)
+   - **Standard Copy Paper**: 500 sheets
+     - **Subtotal**: $20.00
+     - **Discounted Total**: $17.00 (after discount)
+4. **Final Total Charged**: $442.00
+
+5. **Scheduled Delivery**:
+   - **A4 Paper**: Expected delivery by April 11, 2025
+   - **Standard Copy Paper**: Expected delivery by April 8, 2025
+   - Both deliveries will arrive before your required date of April 15, 2025.
+
+Please note that your request for 5,000 sheets of A3 paper could not be fulfilled as it is currently unsupported. If you need assistance with any further inquiries or modifications, feel free to let me know!"
+4,2025-04-05,45060.35,4850.4,"Your order placed on April 5, 2025, has been successfully fulfilled. Here are the details:
+
+- **Order Reference**: BC-20250405-7E8E958A
+- **Charged Total**: $80.75
 - **Scheduled Delivery**: April 9, 2025
 - **Required By**: April 15, 2025
 
-### Status:
-The order is currently partially fulfilled due to the colored paper and washi tape requiring restocks. All items are expected to be deliverable by the requested deadline.
+**Order Includes**:
+1. **Cardstock**:
+   - Quantity: 500 sheets
+   - Total Cost: $75.00
+   - Discounted Price: $71.25
+2. **Standard Copy Paper**:
+   - Quantity: 250 sheets
+   - Total Cost: $10.00
+   - Discounted Price: $9.50
 
-Please confirm if you would like to proceed with this order or if you have any additional requests. Thank you!"
-6,2025-04-06,45078.38,4820.9,"Thank you for your order request of 500 sheets of colorful construction paper, 300 sheets of white printer paper, and 200 sheets of cardstock in various colors.
+Both items will be delivered by the required deadline. If you have any further questions or need assistance, please let me know!"
+5,2025-04-05,45083.6,4820.4,"Thank you for your inquiry regarding the order of supplies for your upcoming party. Here are the details of your order, which has been successfully fulfilled:
 
-Here are the details of your order:
-
-- **Colored Paper:** 500 sheets  
-  - Total Cost: $47.50 (after discount)
-  
-- **Standard Copy Paper:** 300 sheets  
-  - Total Cost: $11.40 (after discount)
-
-- **Cardstock:** 200 sheets  
-  - Total Cost: $28.50 (after discount)
-
-### Overall Summary:
-- **Charged Total:** $87.40 (including a bulk discount of 5%)
-- **Scheduled Delivery Date:** April 10, 2025
-- **Required By:** April 15, 2025
-- **Order Reference:** BC-20250406-546379AD
-
-Your order has been successfully fulfilled and will be delivered by the required date. If you have any further questions or need assistance, please feel free to reach out."
-7,2025-04-07,45119.88,4772.9,"Thank you for your inquiry regarding your order for paper supplies for your upcoming exhibition.
-
-We have confirmed the availability of the following items:
-
-1. **Glossy Paper**: 500 sheets
-   - **Unit Price**: $0.20 per sheet
-   - **Subtotal**: $100.00 (Discounted Subtotal: $95.00)
-
-2. **Cardstock**: 200 sheets
-   - **Unit Price**: $0.15 per sheet
-   - **Subtotal**: $30.00 (Discounted Subtotal: $28.50)
-
-### Total Summary:
-- **Base Total**: $130.00
-- **Bulk Discount (5%)**: $6.50
-- **Final Total**: **$123.50**
-
-### Order Details:
-- **Order Reference**: BC-20250407-09C05A94
-- **Scheduled Delivery**: April 11, 2025
+- **Order Reference**: BC-20250405-59F1C870
+- **Order Date**: April 5, 2025
+- **Charged Total**: $128.25 (after a discount of 5%)
+- **Scheduled Delivery**: April 9, 2025
 - **Required By**: April 15, 2025
 
-Please note that the following requested items could not be fulfilled as they are currently not in stock:
-- 1000 sheets of matte A3 paper
-- 300 poster boards (24"" x 36"")
+### Item Breakdown:
+1. **Colored Paper**
+   - Quantity: 500
+   - Unit Price: $0.10
+   - Subtotal: $50.00 (Discounted: $47.50)
 
-As a result, the order is partially fulfilled. 
+2. **Cardstock**
+   - Quantity: 300
+   - Unit Price: $0.15
+   - Subtotal: $45.00 (Discounted: $42.75)
 
-If you wish to proceed with the current order or make any adjustments, please let us know. Thank you!"
-8,2025-04-07,45003.88,4798.9,"Thank you for your inquiry regarding the order of paper supplies for your upcoming ceremony. Here are the details of your order:
+3. **Decorative Adhesive Tape (Washi Tape)**
+   - Quantity: 200
+   - Unit Price: $0.20
+   - Subtotal: $40.00 (Discounted: $38.00)
+
+Please be informed that the colored paper and cardstock will be delivered as expected, but the decorative washi tape has not been included in the order as there was no available stock at the time of fulfillment.
+
+If you have any further questions or need additional assistance, please let us know!"
+6,2025-04-06,45072.75,4827.4,"Thank you for your order dated April 6, 2025, for supplies needed for your school assembly. Below are the details regarding your order:
 
 ### Order Summary:
-- **Glossy Paper:** 500 sheets
-  - Discounted Total: $85.00
-- **Matte Paper:** 1000 sheets
-  - Discounted Total: $153.00
-- **Standard Copy Paper:** 2000 sheets 
-  - Discounted Total: $68.00
-- **Recycled Paper:** 3000 sheets 
-  - Discounted Total: $204.00
+- **Order Reference**: BC-20250406-C057C791
+- **Total Amount Charged**: $73.15 (after applying a 5% discount)
+- **Scheduled Delivery Date**: April 10, 2025
+- **Required By**: April 15, 2025
 
-### Total:
-- **Final Total After Discount:** $510.00
-- **Order Reference:** BC-20250407-48C2D2BC
-- **Scheduled Delivery:** April 14, 2025
+### Ordered Items:
+1. **Construction Paper**
+   - Quantity: 500 sheets
+   - Unit Price: $0.07
+   - Subtotal: $35.00 (Discounted Subtotal: $33.25)
+
+2. **Standard Copy Paper**
+   - Quantity: 300 sheets
+   - Unit Price: $0.04
+   - Subtotal: $12.00 (Discounted Subtotal: $11.40)
+
+3. **Cardstock**
+   - Quantity: 200 sheets
+   - Unit Price: $0.15
+   - Subtotal: $30.00 (Discounted Subtotal: $28.50)
+
+### Note:
+All items are in the process of being restocked and will be delivered in time to meet your assembly event deadline. No items were excluded from your order, ensuring complete fulfillment.
+
+If you have any further questions or require additional assistance, please do not hesitate to reach out."
+7,2025-04-07,45399.25,4479.4,"Thank you for your inquiry regarding the order for paper supplies for your upcoming exhibition.
+
+Your order has been partially fulfilled as follows:
+
+### Order Summary:
+- **Items Ordered:**
+  1. **Glossy Paper (500 sheets)**
+     - Total: $95.00 (after discount)
+  2. **Large Poster Paper (24"" x 36"") (300 sheets)**
+     - Total: $285.00 (after discount)
+  3. **Cardstock (200 sheets)**
+     - Total: $28.50 (after discount)
+
+- **Total Charged:** $408.50 (after 5% discount)
+- **Order Reference:** BC-20250407-E3852C65
+- **Scheduled Delivery Date:** April 11, 2025
 - **Required By:** April 15, 2025
 
-### Next Steps:
-Your order is confirmed, and it will be delivered as scheduled. If you have any further questions or need assistance, please feel free to reach out. Thank you!"
-9,2025-04-07,45003.88,4798.9,"Thank you for your inquiry regarding paper supplies for the reception on April 10, 2025. Unfortunately, we are unable to fulfill your order as requested due to stock availability. Here are the details:
+### Unmatched Item:
+- **Matte A3 Paper (1000 sheets):** This item is not available in our inventory and has been excluded from your order.
 
-**Order Status:** Rejected  
-**Rejection Reason:** Supplier lead time exceeds the requested delivery date.  
-**Blocked Items:**  
-- A4 paper: 200 sheets (Current stock: 135 sheets; Supplier delivery date: April 11, 2025)  
-- Envelopes: 50 packets (Current stock: 0; Supplier delivery date: April 11, 2025)  
+Please let us know if you would like to adjust your order or have any further questions."
+8,2025-04-07,45321.25,4505.4,Your order was partially fulfilled. Order Reference: BC-20250407-2E387A16. Total charged: $468.00. Scheduled delivery: 2025-04-14. Unsupported or unmatched items were excluded: 2000 sheets of A5 colored paper.
+9,2025-04-07,45321.25,4505.4,"Thank you for your inquiry regarding the order for paper supplies for your reception scheduled for April 10, 2025.
 
-**Available Item:**
-- Glossy paper: 100 sheets (Current stock: 147 sheets; Feasible for delivery by April 8, 2025)
+Unfortunately, your order cannot be fulfilled due to supplier constraints. Here are the details:
 
-Your order is partially fulfilled for the glossy paper only, as both the A4 paper and envelopes cannot be delivered by the required date. 
+1. **Items Requested**:
+   - **A4 Paper**: Requested 200 sheets, but we currently only have 135 sheets available. The earliest restock date is April 11, 2025, which cannot meet your deadline.
+   - **Kraft Paper Envelopes**: Requested 50 packets, but we currently have no stock available. The restock will also arrive on April 11, 2025.
 
-If you would like to adjust your order or need further assistance, please let me know. Thank you!"
-13,2025-04-08,45003.88,4798.9,"Thank you for your inquiry regarding the order of 500 sheets of A4 printing paper and 200 sheets of cardstock for your upcoming gathering on April 10, 2025.
+2. **Unmatched Item**:
+   - 100 sheets of A3 glossy paper were mentioned in your request but are not supported in our inventory.
 
-Unfortunately, your order cannot be fulfilled as requested. The current stock shows only 135 sheets of A4 paper and 148 sheets of cardstock, which are insufficient to meet your requested quantities. Both items require restocking, with anticipated supplier delivery scheduled for April 12, 2025, which exceeds your required delivery date.
+3. **Order Status**: The order has been rejected due to these constraints, as we cannot deliver the items by April 10, 2025.
 
-As such, the order has been partially fulfilled:
-- Items that could not be fulfilled: 
-  - A4 paper (requested: 500, stock: 135)
-  - Cardstock (requested: 200, stock: 148)
+**Next Steps**: If you would like to adjust your order or explore alternative items, please let us know how you'd like to proceed. Thank you for your understanding."
+13,2025-04-08,45321.25,4505.4,"Thank you for your inquiry regarding the order for 500 sheets of A4 printing paper and 200 sheets of cardstock for your upcoming gathering on April 10, 2025.
 
-If you would like to adjust your delivery date or explore alternative options, please let me know how you would like to proceed."
-12,2025-04-08,44999.28,4800.9,"Thank you for your order inquiry dated April 8, 2025, for supplies needed by April 15, 2025. 
+Unfortunately, we are unable to fulfill your order. The current stock includes only 135 sheets of A4 paper and 148 sheets of cardstock. Both items require a restock and will not be available for delivery until April 12, 2025, which is after your specified deadline.
 
-We have reviewed your request and are pleased to inform you that we can fulfill your order as follows:
+As a result, your order has been rejected, and no charges have been applied. If you would like to explore alternative options or adjust your order, please let us know how we can assist you further."
+12,2025-04-08,45316.65,4507.4,"Thank you for your inquiry regarding the order for supplies for your upcoming party.
 
-**Order Summary:**
-1. **Cardstock**
+We have successfully processed your order which includes:
+
+1. **Cardstock:**
    - Quantity: 200 sheets
    - Unit Price: $0.15
    - Discounted Subtotal: $28.50
 
-2. **Standard Copy Paper**
+2. **Standard Copy Paper:**
    - Quantity: 500 sheets
    - Unit Price: $0.04
    - Discounted Subtotal: $19.00
 
-3. **Paper Napkins**
+3. **Paper Napkins:**
    - Quantity: 100 sheets
    - Unit Price: $0.02
    - Discounted Subtotal: $1.90
 
-**Total Cost:** $49.40 (including a 5% bulk discount)
+**Total Charged:** $49.40
+**Discount Rate:** 5% applied to the total order.
 
-**Delivery Details:**
+### Order Details:
+- **Order Status:** Fulfilled
+- **Order Reference:** BC-20250408-65D91319
+- **Order Date:** April 8, 2025
 - **Scheduled Delivery Date:** April 12, 2025
 - **Required By:** April 15, 2025
 
-Your order of 200 sheets of cardstock, 500 sheets of standard copy paper, and 100 paper napkins has been successfully placed. Please note that all items are deliverable by your required date.
+All requested items are scheduled to be delivered by the required date. Should you need further assistance or additional adjustments, please feel free to reach out."
+10,2025-04-08,45309.4,4507.4,"Thank you for your order placed on April 8, 2025.
 
-If you have any further questions or require assistance, feel free to reach out! Thank you for choosing Beaver's Choice."
-10,2025-04-08,44992.03,4800.9,"Thank you for your inquiry regarding your order for paper supplies. 
+**Order Summary:**
+- **Reference:** BC-20250408-9A8FF115
+- **Items Ordered:**
+  - **Glossy Paper:** 500 sheets
+    - **Total:** $95.00 (after 5% discount)
+  - **Cardstock:** 300 sheets
+    - **Total:** $42.75 (after 5% discount)
+- **Total Charged:** $137.75
 
-You have requested 500 sheets of high-quality glossy paper and 300 sheets of sturdy cardstock, with a required delivery by April 15, 2025. 
+**Delivery Details:**
+- **Scheduled Delivery Date:** April 12, 2025
+- **Required By Date:** April 15, 2025
 
-Here's the order summary:
+All items are deliverable by the required deadline. If you have any further questions or need assistance, please let us know!"
+11,2025-04-08,45309.4,4507.4,"Thank you for your inquiry regarding the order of paper supplies for your exhibition.
 
-1. **Glossy Paper**:
-   - Quantity: 500 sheets
-   - Price: $0.20 per sheet
-   - Discount: 5% applied
-   - Total after discount: $95.00
+We successfully processed your order for **300 sheets of A4 matte paper**. Here are the details:
 
-2. **Cardstock**:
-   - Quantity: 300 sheets
-   - Price: $0.15 per sheet
-   - Discount: 5% applied
-   - Total after discount: $42.75
+- **Order Reference**: BC-20250408-98EEDA67
+- **Order Date**: April 8, 2025
+- **Charged Total**: $54.00
+- **Scheduled Delivery**: April 12, 2025
+- **Required By**: April 15, 2025
 
-**Total Order Cost**: $137.75 (after discounts).
+Currently, we were unable to fulfill your request for **500 sheets of A3 glossy paper**, as this item is unsupported in our inventory. As such, your order has been partially fulfilled.
 
-Since we currently have insufficient stock of both items, we will need to restock. We can place the order for restocking immediately. The supplier has confirmed that both items will be delivered by April 12, 2025, ensuring they arrive before your required date.
+If you need to modify this order or have any additional requests, please let us know."
+14,2025-04-09,45309.4,4507.4,"Thank you for your inquiry regarding the large order for high-quality paper supplies for your upcoming performance.
+
+Unfortunately, your order has been rejected because the supplier's lead times exceed the requested delivery date of April 15, 2025. Specifically:
+
+- **A4 Paper**: You requested 5,000 sheets; however, only 135 sheets are currently in stock. The supplier can only provide this item after April 16.
+- **Poster Paper**: You requested 2,000 sheets; similarly, only 100 sheets are in stock, with restock available after April 16.
+- **Cardstock**: You requested 500 sheets, of which 148 are currently in stock. This item can be delivered by April 13.
+
+As a result, only the cardstock is fulfillable, but since not all requested items can be delivered on time, the order is deemed ""partially fulfilled.""
+
+To proceed, you may wish to:
+1. Adjust your order to include only the cardstock and possibly remove the other items.
+2. Explore alternative suppliers for the A4 and poster papers to meet your timeline.
+
+Please let me know how you would like to proceed!"
+15,2025-04-12,45309.4,4507.4,"Thank you for your inquiry regarding the large order of high-quality paper supplies for your upcoming demonstration.
+
+We were able to process the request for 10,000 sheets of A4 white paper. Here are the details:
+
+- **Item**: A4 paper
+- **Quantity**: 10,000 sheets
+- **Unit Price**: $0.05
+- **Subtotal**: $500.00
+- **Discount**: 15% ($75.00)
+- **Final Total**: $425.00
+
+However, we regret to inform you that we are unable to fulfill this order by your required delivery date of April 15, 2025, due to the following reasons:
+
+1. We currently have only 135 sheets of A4 paper in stock, and restocking 10,000 sheets will not be completed until April 19, 2025.
+2. The additional items you requested, 5,000 sheets of A3 colored paper and 500 reams of cardboard for signage, are unsupported by our inventory and cannot be provided.
+
+As a result, the order has been **rejected**. If you would like to proceed with a different order or if you have any further inquiries, please let us know, and we'd be happy to assist you."
+16,2025-04-13,45309.4,4507.4,"Thank you for your inquiry regarding the order placement for your assembly event.
+
+After reviewing your request for the following items:
+- 500 sheets of A4 printer paper
+- 200 sheets of colorful construction paper
+- 100 sheets of poster board (large poster paper, 24x36 inches)
+
+I regret to inform you that the order has been partially fulfilled. The details are as follows:
+
+**Fulfilled Item:**
+- **Large Poster Paper (24x36 inches)**: 100 sheets available and can be delivered by April 13, 2025.
+
+**Items Not Deliverable By Requested Date:**
+- **A4 Paper**: Not deliverable; supplier delivery date is April 17, 2025.
+- **Construction Paper**: Not deliverable; supplier delivery date is April 17, 2025.
+
+Unfortunately, due to the lead times exceeding your requested delivery date of April 15, 2025, we cannot proceed with the A4 paper and construction paper orders.
+
+For the fulfilled item, you can expect delivery on April 13, 2025. If you would like to discuss alternative solutions for the A4 paper and construction paper or have any further questions, please let us know. Thank you for your understanding."
+17,2025-04-14,45309.4,4507.4,"Thank you for your inquiry regarding paper supplies for your upcoming reception.
+
+Your order has been **partially fulfilled** as follows:
+
+1. **Paper Plates**: 500 units - Available for delivery today, April 14, 2025.
+2. **A4 Paper**: 1000 sheets - **Unavailable** (current stock: 135 sheets; restock delivery on April 18, 2025).
+3. **Paper Napkins**: 2000 units - **Unavailable** (current stock: 100; restock delivery on April 21, 2025).
+4. **Paper Cups**: 1000 units - **Unavailable** (no current stock; restock delivery on April 21, 2025).
+
+The items that could not be delivered by your requested deadline of April 15, 2025, are the **A4 Paper**, **Paper Napkins**, and **Paper Cups**. Unfortunately, this results in a rejection of the overall order due to the lead time exceeding your requested delivery date.
 
 Next steps:
-- Please confirm that you would like to proceed with the order for both glossy paper and cardstock based on the details above.
+- You may want to consider extending your delivery deadline to accommodate the restock dates for the unavailable items.
+- Alternatively, we can suggest finding other suppliers for the items that cannot be delivered on time.
 
-Thank you, and we look forward to your response!"
-11,2025-04-08,44984.33,4800.9,"Thank you for your inquiry regarding the order of 500 sheets of A3 glossy paper and 300 sheets of A4 matte paper. 
+Please let us know how you would like to proceed. Thank you."
+18,2025-04-14,45309.4,4507.4,"Thank you for your inquiry regarding paper supplies for your upcoming ceremony. Unfortunately, we cannot fulfill your order as requested due to stock limitations.
 
-We have confirmed your order, which will be partially fulfilled due to current stock levels. Here are the details:
+### Order Details:
+- **Requested Items**:
+  1. **Cardstock**: 500 sheets (In Stock: 148)
+  2. **Standard Copy Paper**: 1000 sheets (In Stock: 100)
+  3. **Colored Paper**: 200 sheets (In Stock: 188)
 
-1. **Glossy Paper (A3)**: 
-   - **Requested Quantity**: 500 sheets
-   - **Current Stock**: 147 sheets 
-   - **Restock Quantity Needed**: 500 sheets 
-   - **Supplier Delivery Date**: April 12, 2025 
-   - **Subtotal**: $100.00 (Discounted Total: $95.00)
-
-2. **Matte Paper (A4)**: 
-   - **Requested Quantity**: 300 sheets 
-   - **Current Stock**: 100 sheets 
-   - **Restock Quantity Needed**: 300 sheets 
-   - **Supplier Delivery Date**: April 12, 2025 
-   - **Subtotal**: $54.00 (Discounted Total: $51.30)
-
-**Total Cost**: $146.30 (with a 5% discount applied)
-
-**Order Reference**: BC-20250408-DBBFFD9B  
-**Scheduled Delivery**: April 12, 2025  
-**Required By**: April 15, 2025  
-
-While we are processing the restock of both items to fulfill your total order of 800 sheets, please note that we currently do not have enough stock for complete fulfillment at once. The substantial portions of the order will be delivered by the scheduled date.
-
-If you have any further questions or wish to proceed, please let us know. Thank you!"
-14,2025-04-09,44984.33,4800.9,"Thank you for your inquiry regarding a large order of paper supplies for your upcoming performance.
-
-Unfortunately, your order could not be fully fulfilled as follows:
-
-1. **A4 Paper**: 
-   - Requested: 5,000 sheets
-   - Deliverable by Deadline: No (available from supplier on April 16, 2025)
-
-2. **Colored Paper**: 
-   - Requested: 2,000 sheets
-   - Deliverable by Deadline: No (available from supplier on April 16, 2025)
-
-3. **Cardstock**: 
-   - Requested: 500 sheets
-   - Deliverable by Deadline: Yes (available for delivery on April 13, 2025)
-
-### Summary of Your Order:
-- **Status**: Partially Fulfilled
-- **Deliverable Item**: 500 sheets of cardstock at a total cost of **$63.75** (after discount).
-- **Not Deliverable Items**: A4 paper and colored paper.
+### Fulfillment Status:
+- **Order Status**: Rejected
+- **Rejection Reason**: Supplier lead time exceeds the required delivery date of April 15, 2025. The earliest stock replenishment would not be available until April 18, 2025, which does not meet your timeline.
 
 ### Next Steps:
-If you would like to adjust your order, such as reducing the quantities of the A4 and colored paper, or if you wish to extend the deadline to accommodate the stock availability, please let me know how you would like to proceed. Thank you!"
-15,2025-04-12,44984.33,4800.9,"Thank you for your inquiry regarding a large order for high-quality paper supplies for your upcoming demonstration.
-
-Unfortunately, we cannot fulfill your order as the lead time from our supplier exceeds your requested delivery date of April 15, 2025. Specifically, we are unable to deliver the following items by the deadline:
-
-- **A4 Paper**: Requested 10,000 sheets; currently in stock: 135 sheets. Supplier delivery date: April 19, 2025.
-- **Colored Paper**: Requested 5,000 sheets; currently in stock: 143 sheets. Supplier delivery date: April 19, 2025.
-
-The order is thus **partially fulfilled**, as the request for 500 reams of cardboard for signage was not considered in the fulfilled item list.
-
-Here is the itemized quote for the available items:
-
-1. **A4 Paper**
-   - Quantity: 10,000 sheets
-   - **Regular Price**: $0.05 per sheet
-   - **Subtotal**: $500.00
-   - **Discounted Subtotal**: $425.00 (after a 15% bulk discount)
-
-2. **Colored Paper**
-   - Quantity: 5,000 sheets
-   - **Regular Price**: $0.10 per sheet
-   - **Subtotal**: $500.00
-   - **Discounted Subtotal**: $425.00 (after a 15% bulk discount)
-
-### Total Before Discount
-- **Base Total**: $1,000.00
-
-### Final Total:
-- **$850.00**
-
-Please let us know if you would like to adjust your order, consider alternative products, or discuss further options. Thank you for your understanding."
-16,2025-04-13,44984.33,4800.9,"Thank you for your inquiry regarding the order for your assembly event. Unfortunately, we cannot fulfill your complete order by the requested delivery date of April 15, 2025. 
+If you would like to adjust your order quantities or choose alternative items that can be delivered by your deadline, please let us know, and we will be happy to assist!"
+19,2025-04-15,45309.4,4507.4,"Thank you for your inquiry regarding the paper supplies for your exhibition. Unfortunately, your order has been partially fulfilled. Here are the details:
 
 ### Order Summary:
-- **A4 Paper**: Requested 500 sheets; currently available stock is only 135 sheets. Estimated supplier delivery is April 17, which is after your deadline.
-- **Colored Paper**: Requested 200 sheets; currently available stock is 143 sheets. Supplier delivery is also April 17, post-deadline.
-- **Large Poster Paper**: Requested 100 sheets; sufficient stock is available, and it can be delivered by April 15.
-
-### Order Status:
-- **Status**: Partially Fulfilled (only large poster paper can be delivered by deadline)
-- **Blocked Items**: 
-  - A4 paper
-  - Colored paper
-
-### Next Steps:
-If you would like to adjust the order to only include the large poster paper or if you have other requests, please let me know how you wish to proceed. Thank you for your understanding."
-17,2025-04-14,44984.33,4800.9,"Thank you for your inquiry regarding the paper supplies for your upcoming reception event. 
-
-Regrettably, we cannot fulfill your order by the required delivery date of April 15, 2025, as the supplier lead time for most items exceeds this date. Below is the status of your requested items:
-
-- **A4 Paper**: Requested 1000 units, current stock 135 units. Supplier delivery date: April 18, 2025. **Blocked.**
-- **Colored Paper**: Requested 500 units, current stock 143 units. Supplier delivery date: April 18, 2025. **Blocked.**
-- **Paper Napkins**: Requested 2000 units, current stock 100 units. Supplier delivery date: April 21, 2025. **Blocked.**
-- **Disposable Cups**: Requested 1000 units, current stock 0 units. Supplier delivery date: April 21, 2025. **Blocked.**
-- **Paper Plates**: Requested 500 units, current stock 748 units. Supplier delivery date: April 14, 2025. **Deliverable on time.**
-
-As a result, your order is partially fulfilled with only the **Paper Plates** available for timely delivery on April 14, 2025. 
-
-If you would like to adjust your order or delivery timeline, please let us know how you would like to proceed."
-18,2025-04-14,44984.33,4800.9,"Thank you for your inquiry regarding the order of paper supplies for your upcoming ceremony.
-
-After reviewing your request for 500 sheets of high-quality cardstock, 1000 sheets of standard printing paper, and 200 sheets of colored paper, I regret to inform you that the order cannot be fulfilled as requested. Unfortunately, all the items are currently below the requested quantities, and they will not be deliverable by your required deadline of April 15, 2025, due to supplier lead times that extend to April 18, 2025.
-
-**Order Status:** Rejected  
-**Reason:** Supplier lead time exceeds the requested delivery date.  
-**Blocked Items:** Cardstock, Standard copy paper, Colored paper  
-
-### Itemized Quote (if order was fulfilled)
-- Cardstock: 500 sheets at $0.15 each - Subtotal: $75.00 (Discounted: $71.25)
-- Standard Copy Paper: 1000 sheets at $0.04 each - Subtotal: $40.00 (Discounted: $38.00)
-- Colored Paper: 200 sheets at $0.10 each - Subtotal: $20.00 (Discounted: $19.00)
-
-**Total Cost (without fulfillment):** $128.25 (including 5% discount)
-
-**Next Steps:**  
-Please consider adjusting your required delivery date or explore alternative sources for your paper supplies. If you have any further questions or need assistance, feel free to reach out."
-19,2025-04-15,44984.33,4800.9,"Thank you for your inquiry regarding the paper supplies for your upcoming exhibition.
-
-We have processed your order, but it is partially fulfilled due to the following:
-
-1. **Glossy Paper** - Unfortunately, the order for 2000 sheets cannot be fulfilled by your required delivery date of April 20, 2025, as the supplier's delivery date is April 22, 2025.
-2. **Cardstock** - The order for 1000 sheets of cardstock will be delivered on time by April 19, 2025.
-
-### Pricing Details:
-- **Glossy Paper**: 
-  - Unit Price: $0.20
-  - Total: $400.00 
-  - With a 10% discount: $360.00
-
+- **Glossy Paper**:
+  - **Requested**: 2000 sheets
+  - **Available**: 147 sheets
+  - **Supplier Delivery Date**: April 22, 2025 (not deliverable by your required date of April 20, 2025).
 - **Cardstock**:
-  - Unit Price: $0.15 
-  - Total: $150.00 
-  - With a 10% discount: $135.00
-
-### Total Summary:
-- **Base Total (before discount)**: $550.00
-- **Total After Discount**: **$495.00**
-
-### Next Steps:
-Please consider alternative suppliers for the glossy paper or let us know if you wish to adjust your order. The total charge for the cardstock, which can be delivered on time, stands at **$135.00** after the discount.
-
-If you have any further questions or adjustments, please feel free to reach out."
-20,2025-04-17,45166.83,4205.900000000001,"Thank you for your inquiry regarding the order for your upcoming concert supplies. Here are the details:
-
-### Order Summary:
-- **Items Ordered**:
-  1. **Flyers**: 5,000 units
-     - **Unit Price**: $0.15
-     - **Subtotal**: $750.00
-     - **Discounted Subtotal**: $637.50 (15% discount applied)
-  2. **Large Poster Paper (24x36 inches)**: 2,000 units
-     - **Unit Price**: $1.00
-     - **Subtotal**: $2,000.00
-     - **Discounted Subtotal**: $1,700.00 (15% discount applied)
-
-- **Total Amount**: $2,337.50 (after discounts applied)
+  - **Requested**: 1000 sheets
+  - **Available**: 148 sheets
+  - **Scheduled Delivery**: April 19, 2025 (deliverable on time).
 
 ### Order Status:
-- **Order Reference**: BC-20250417-05933004
-- **Delivery Scheduled**: April 24, 2025
-- **Required By**: May 15, 2025
+- **Result**: Order rejected due to the delivery time exceeding your requested deadline for the glossy paper.
 
-### Important Note:
-The order is partially fulfilled as the requested 10,000 tickets were not included in the validated plan. 
+### Pricing:
+- **Total for Cardstock**: $135.00 (after discount).
+- **Total for Glossy Paper**: Not applicable due to insufficient stock.
 
-If you need further assistance or adjustments to your order, please let us know!"
+### Next Steps:
+If you would like to proceed with an order for the available cardstock or require alternative options for the glossy paper, please let us know how you would like to proceed. Thank you for your understanding."
+20,2025-04-17,45191.9,4212.4,"Thank you for your order request for paper supplies for your upcoming concert.
+
+### Order Details:
+- **Ordered Items:**
+  1. **Flyers**
+     - Quantity: 5,000
+     - Unit Price: $0.15
+     - Subtotal: $750.00
+     - Discounted Subtotal: $637.50
+
+  2. **Large Poster Paper (24x36 inches)**
+     - Quantity: 2,000
+     - Unit Price: $1.00
+     - Subtotal: $2,000.00
+     - Discounted Subtotal: $1,700.00
+
+### Pricing Summary:
+- **Base Total:** $2,750.00
+- **Discount Rate:** 15%
+- **Total After Discount:** $2,337.50
+
+### Fulfillment Status:
+- Your order has been **partially fulfilled**.
+- The **Flyers** and **Large Poster Paper** will be fulfilled following a restock arriving on **April 24, 2025**, ensuring delivery by your required date of **May 15, 2025**.
+- Unfortunately, the **10,000 tickets** requested are unsupported and were not fulfilled as part of this order.
+
+### Next Steps:
+- You will receive confirmation once the order is shipped, and the total amount of $2,337.50 will be charged accordingly.
+
+If you have any further questions or need additional assistance, please let us know."

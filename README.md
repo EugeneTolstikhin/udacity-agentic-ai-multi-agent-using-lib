@@ -20,7 +20,8 @@ This project challenges your ability to orchestrate agents using modern Python f
 
 From the `project.zip` starter archive, you will find:
 
-- `project_starter.py`: The main Python script you will modify to implement your agent system
+- `project_starter.py`: Compatibility entrypoint exposing the original starter helper names
+- `beavers_choice/`: Strict hexagonal implementation with domain, ports, adapters, and app wiring
 - `quotes.csv`: Historical quote data used for reference by quoting agents
 - `quote_requests.csv`: Incoming customer requests used to build quoting logic
 - `quote_requests_sample.csv`: A set of simulated test cases to evaluate your system
@@ -60,6 +61,10 @@ container afterward:
 
 `docker compose run --rm app`
 
+The same application can also be started through the package entrypoint:
+
+`docker compose run --rm app python -m beavers_choice`
+
 Generated files such as `beaver_choice.db`, `test_results.csv`, and
 `logfire.log` are written to this project directory through the bind mount.
 `logfire.log` contains local Pydantic Logfire traces for agent runs, tool calls,
@@ -69,6 +74,33 @@ Cloud. Override its path with `LOGFIRE_LOG_FILE` if needed.
 Rebuild after changing `requirements.txt`:
 
 `docker compose build --no-cache`
+
+Run the offline regression tests:
+
+`docker compose run --rm app pytest -q`
+
+## Architecture
+
+The implementation uses a strict hexagonal architecture:
+
+- `beavers_choice/domain`: framework-independent business models, catalog
+  matching, inventory, quoting, fulfillment, discount, delivery, and response
+  safety rules
+- `beavers_choice/ports`: `typing.Protocol` interfaces for AI, persistence,
+  telemetry, output, clock, and ID generation
+- `beavers_choice/adapters`: Pydantic AI, SQLAlchemy/SQLite, Logfire,
+  CSV/Pandas, UUID, and system-clock implementations of those ports
+- `beavers_choice/app`: production container, workflow orchestration,
+  evaluation runner, and CLI entrypoint
+
+This keeps Pydantic AI, SQLite, Pandas, and Logfire replaceable. LangChain can
+replace `PydanticAiAgentAdapter`, and PostgreSQL can be used by changing the
+SQLAlchemy database URL or replacing the persistence adapter.
+
+The Decision Orchestrator Agent extracts raw customer item phrases. The domain
+`CatalogMatchingService` then performs exact-name matching, aliases, and fuzzy
+matching above a confidence threshold before worker agents receive catalog
+items.
 
 Start by defining your agents in the `"YOUR MULTI AGENT STARTS HERE"` section inside `template.py`. Once your agent team is ready:
 

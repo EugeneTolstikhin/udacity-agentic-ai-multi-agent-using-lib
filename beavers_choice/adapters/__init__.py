@@ -1,0 +1,2 @@
+"""Framework and infrastructure adapters."""
+
